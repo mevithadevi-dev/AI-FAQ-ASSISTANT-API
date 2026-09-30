@@ -1,159 +1,81 @@
-# etag
+[![Build Status][travis-svg]][travis-url]
+[![dependency status][deps-svg]][deps-url]
+[![dev dependency status][dev-deps-svg]][dev-deps-url]
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build Status][travis-image]][travis-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+# extend() for Node.js <sup>[![Version Badge][npm-version-png]][npm-url]</sup>
 
-Create simple HTTP ETags
+`node-extend` is a port of the classic extend() method from jQuery. It behaves as you expect. It is simple, tried and true.
 
-This module generates HTTP ETags (as defined in RFC 7232) for use in
-HTTP responses.
+Notes:
+
+* Since Node.js >= 4,
+  [`Object.assign`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
+  now offers the same functionality natively (but without the "deep copy" option).
+  See [ECMAScript 2015 (ES6) in Node.js](https://nodejs.org/en/docs/es6).
+* Some native implementations of `Object.assign` in both Node.js and many
+  browsers (since NPM modules are for the browser too) may not be fully
+  spec-compliant.
+  Check [`object.assign`](https://www.npmjs.com/package/object.assign) module for
+  a compliant candidate.
 
 ## Installation
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+This package is available on [npm][npm-url] as: `extend`
 
-```sh
-$ npm install etag
+``` sh
+npm install extend
 ```
 
-## API
+## Usage
 
-<!-- eslint-disable no-unused-vars -->
+**Syntax:** extend **(** [`deep`], `target`, `object1`, [`objectN`] **)**
 
-```js
-var etag = require('etag')
+*Extend one object with one or more others, returning the modified object.*
+
+**Example:**
+
+``` js
+var extend = require('extend');
+extend(targetObject, object1, object2);
 ```
 
-### etag(entity, [options])
+Keep in mind that the target object will be modified, and will be returned from extend().
 
-Generate a strong ETag for the given entity. This should be the complete
-body of the entity. Strings, `Buffer`s, and `fs.Stats` are accepted. By
-default, a strong ETag is generated except for `fs.Stats`, which will
-generate a weak ETag (this can be overwritten by `options.weak`).
+If a boolean true is specified as the first argument, extend performs a deep copy, recursively copying any objects it finds. Otherwise, the copy will share structure with the original object(s).
+Undefined properties are not copied. However, properties inherited from the object's prototype will be copied over.
+Warning: passing `false` as the first argument is not supported.
 
-<!-- eslint-disable no-undef -->
+### Arguments
 
-```js
-res.setHeader('ETag', etag(body))
-```
-
-#### Options
-
-`etag` accepts these properties in the options object.
-
-##### weak
-
-Specifies if the generated ETag will include the weak validator mark (that
-is, the leading `W/`). The actual entity tag is the same. The default value
-is `false`, unless the `entity` is `fs.Stats`, in which case it is `true`.
-
-## Testing
-
-```sh
-$ npm test
-```
-
-## Benchmark
-
-```bash
-$ npm run-script bench
-
-> etag@1.8.1 bench nodejs-etag
-> node benchmark/index.js
-
-  http_parser@2.7.0
-  node@6.11.1
-  v8@5.1.281.103
-  uv@1.11.0
-  zlib@1.2.11
-  ares@1.10.1-DEV
-  icu@58.2
-  modules@48
-  openssl@1.0.2k
-
-> node benchmark/body0-100b.js
-
-  100B body
-
-  4 tests completed.
-
-  buffer - strong x 258,647 ops/sec ±1.07% (180 runs sampled)
-  buffer - weak   x 263,812 ops/sec ±0.61% (184 runs sampled)
-  string - strong x 259,955 ops/sec ±1.19% (185 runs sampled)
-  string - weak   x 264,356 ops/sec ±1.09% (184 runs sampled)
-
-> node benchmark/body1-1kb.js
-
-  1KB body
-
-  4 tests completed.
-
-  buffer - strong x 189,018 ops/sec ±1.12% (182 runs sampled)
-  buffer - weak   x 190,586 ops/sec ±0.81% (186 runs sampled)
-  string - strong x 144,272 ops/sec ±0.96% (188 runs sampled)
-  string - weak   x 145,380 ops/sec ±1.43% (187 runs sampled)
-
-> node benchmark/body2-5kb.js
-
-  5KB body
-
-  4 tests completed.
-
-  buffer - strong x 92,435 ops/sec ±0.42% (188 runs sampled)
-  buffer - weak   x 92,373 ops/sec ±0.58% (189 runs sampled)
-  string - strong x 48,850 ops/sec ±0.56% (186 runs sampled)
-  string - weak   x 49,380 ops/sec ±0.56% (190 runs sampled)
-
-> node benchmark/body3-10kb.js
-
-  10KB body
-
-  4 tests completed.
-
-  buffer - strong x 55,989 ops/sec ±0.93% (188 runs sampled)
-  buffer - weak   x 56,148 ops/sec ±0.55% (190 runs sampled)
-  string - strong x 27,345 ops/sec ±0.43% (188 runs sampled)
-  string - weak   x 27,496 ops/sec ±0.45% (190 runs sampled)
-
-> node benchmark/body4-100kb.js
-
-  100KB body
-
-  4 tests completed.
-
-  buffer - strong x 7,083 ops/sec ±0.22% (190 runs sampled)
-  buffer - weak   x 7,115 ops/sec ±0.26% (191 runs sampled)
-  string - strong x 3,068 ops/sec ±0.34% (190 runs sampled)
-  string - weak   x 3,096 ops/sec ±0.35% (190 runs sampled)
-
-> node benchmark/stats.js
-
-  stat
-
-  4 tests completed.
-
-  real - strong x 871,642 ops/sec ±0.34% (189 runs sampled)
-  real - weak   x 867,613 ops/sec ±0.39% (190 runs sampled)
-  fake - strong x 401,051 ops/sec ±0.40% (189 runs sampled)
-  fake - weak   x 400,100 ops/sec ±0.47% (188 runs sampled)
-```
+* `deep` *Boolean* (optional)
+If set, the merge becomes recursive (i.e. deep copy).
+* `target`	*Object*
+The object to extend.
+* `object1`	*Object*
+The object that will be merged into the first.
+* `objectN` *Object* (Optional)
+More objects to merge into the first.
 
 ## License
 
-[MIT](LICENSE)
+`node-extend` is licensed under the [MIT License][mit-license-url].
 
-[npm-image]: https://img.shields.io/npm/v/etag.svg
-[npm-url]: https://npmjs.org/package/etag
-[node-version-image]: https://img.shields.io/node/v/etag.svg
-[node-version-url]: https://nodejs.org/en/download/
-[travis-image]: https://img.shields.io/travis/jshttp/etag/master.svg
-[travis-url]: https://travis-ci.org/jshttp/etag
-[coveralls-image]: https://img.shields.io/coveralls/jshttp/etag/master.svg
-[coveralls-url]: https://coveralls.io/r/jshttp/etag?branch=master
-[downloads-image]: https://img.shields.io/npm/dm/etag.svg
-[downloads-url]: https://npmjs.org/package/etag
+## Acknowledgements
+
+All credit to the jQuery authors for perfecting this amazing utility.
+
+Ported to Node.js by [Stefan Thomas][github-justmoon] with contributions by [Jonathan Buchanan][github-insin] and [Jordan Harband][github-ljharb].
+
+[travis-svg]: https://travis-ci.org/justmoon/node-extend.svg
+[travis-url]: https://travis-ci.org/justmoon/node-extend
+[npm-url]: https://npmjs.org/package/extend
+[mit-license-url]: http://opensource.org/licenses/MIT
+[github-justmoon]: https://github.com/justmoon
+[github-insin]: https://github.com/insin
+[github-ljharb]: https://github.com/ljharb
+[npm-version-png]: http://versionbadg.es/justmoon/node-extend.svg
+[deps-svg]: https://david-dm.org/justmoon/node-extend.svg
+[deps-url]: https://david-dm.org/justmoon/node-extend
+[dev-deps-svg]: https://david-dm.org/justmoon/node-extend/dev-status.svg
+[dev-deps-url]: https://david-dm.org/justmoon/node-extend#info=devDependencies
+

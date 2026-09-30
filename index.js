@@ -1,131 +1,117 @@
-/*!
- * etag
- * Copyright(c) 2014-2016 Douglas Christopher Wilson
- * MIT Licensed
- */
+'use strict';
 
-'use strict'
+var hasOwn = Object.prototype.hasOwnProperty;
+var toStr = Object.prototype.toString;
+var defineProperty = Object.defineProperty;
+var gOPD = Object.getOwnPropertyDescriptor;
 
-/**
- * Module exports.
- * @public
- */
+var isArray = function isArray(arr) {
+	if (typeof Array.isArray === 'function') {
+		return Array.isArray(arr);
+	}
 
-module.exports = etag
+	return toStr.call(arr) === '[object Array]';
+};
 
-/**
- * Module dependencies.
- * @private
- */
+var isPlainObject = function isPlainObject(obj) {
+	if (!obj || toStr.call(obj) !== '[object Object]') {
+		return false;
+	}
 
-var crypto = require('crypto')
-var Stats = require('fs').Stats
+	var hasOwnConstructor = hasOwn.call(obj, 'constructor');
+	var hasIsPrototypeOf = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
+	// Not own constructor property must be Object
+	if (obj.constructor && !hasOwnConstructor && !hasIsPrototypeOf) {
+		return false;
+	}
 
-/**
- * Module variables.
- * @private
- */
+	// Own properties are enumerated firstly, so to speed up,
+	// if last one is own, then all properties are own.
+	var key;
+	for (key in obj) { /**/ }
 
-var toString = Object.prototype.toString
+	return typeof key === 'undefined' || hasOwn.call(obj, key);
+};
 
-/**
- * Generate an entity tag.
- *
- * @param {Buffer|string} entity
- * @return {string}
- * @private
- */
+// If name is '__proto__', and Object.defineProperty is available, define __proto__ as an own property on target
+var setProperty = function setProperty(target, options) {
+	if (defineProperty && options.name === '__proto__') {
+		defineProperty(target, options.name, {
+			enumerable: true,
+			configurable: true,
+			value: options.newValue,
+			writable: true
+		});
+	} else {
+		target[options.name] = options.newValue;
+	}
+};
 
-function entitytag (entity) {
-  if (entity.length === 0) {
-    // fast-path empty
-    return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"'
-  }
+// Return undefined instead of __proto__ if '__proto__' is not an own property
+var getProperty = function getProperty(obj, name) {
+	if (name === '__proto__') {
+		if (!hasOwn.call(obj, name)) {
+			return void 0;
+		} else if (gOPD) {
+			// In early versions of node, obj['__proto__'] is buggy when obj has
+			// __proto__ as an own property. Object.getOwnPropertyDescriptor() works.
+			return gOPD(obj, name).value;
+		}
+	}
 
-  // compute hash of entity
-  var hash = crypto
-    .createHash('sha1')
-    .update(entity, 'utf8')
-    .digest('base64')
-    .substring(0, 27)
+	return obj[name];
+};
 
-  // compute length of entity
-  var len = typeof entity === 'string'
-    ? Buffer.byteLength(entity, 'utf8')
-    : entity.length
+module.exports = function extend() {
+	var options, name, src, copy, copyIsArray, clone;
+	var target = arguments[0];
+	var i = 1;
+	var length = arguments.length;
+	var deep = false;
 
-  return '"' + len.toString(16) + '-' + hash + '"'
-}
+	// Handle a deep copy situation
+	if (typeof target === 'boolean') {
+		deep = target;
+		target = arguments[1] || {};
+		// skip the boolean and the target
+		i = 2;
+	}
+	if (target == null || (typeof target !== 'object' && typeof target !== 'function')) {
+		target = {};
+	}
 
-/**
- * Create a simple ETag.
- *
- * @param {string|Buffer|Stats} entity
- * @param {object} [options]
- * @param {boolean} [options.weak]
- * @return {String}
- * @public
- */
+	for (; i < length; ++i) {
+		options = arguments[i];
+		// Only deal with non-null/undefined values
+		if (options != null) {
+			// Extend the base object
+			for (name in options) {
+				src = getProperty(target, name);
+				copy = getProperty(options, name);
 
-function etag (entity, options) {
-  if (entity == null) {
-    throw new TypeError('argument entity is required')
-  }
+				// Prevent never-ending loop
+				if (target !== copy) {
+					// Recurse if we're merging plain objects or arrays
+					if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
+						if (copyIsArray) {
+							copyIsArray = false;
+							clone = src && isArray(src) ? src : [];
+						} else {
+							clone = src && isPlainObject(src) ? src : {};
+						}
 
-  // support fs.Stats object
-  var isStats = isstats(entity)
-  var weak = options && typeof options.weak === 'boolean'
-    ? options.weak
-    : isStats
+						// Never move original objects, clone them
+						setProperty(target, { name: name, newValue: extend(deep, clone, copy) });
 
-  // validate argument
-  if (!isStats && typeof entity !== 'string' && !Buffer.isBuffer(entity)) {
-    throw new TypeError('argument entity must be string, Buffer, or fs.Stats')
-  }
+					// Don't bring in undefined values
+					} else if (typeof copy !== 'undefined') {
+						setProperty(target, { name: name, newValue: copy });
+					}
+				}
+			}
+		}
+	}
 
-  // generate entity tag
-  var tag = isStats
-    ? stattag(entity)
-    : entitytag(entity)
-
-  return weak
-    ? 'W/' + tag
-    : tag
-}
-
-/**
- * Determine if object is a Stats object.
- *
- * @param {object} obj
- * @return {boolean}
- * @api private
- */
-
-function isstats (obj) {
-  // genuine fs.Stats
-  if (typeof Stats === 'function' && obj instanceof Stats) {
-    return true
-  }
-
-  // quack quack
-  return obj && typeof obj === 'object' &&
-    'ctime' in obj && toString.call(obj.ctime) === '[object Date]' &&
-    'mtime' in obj && toString.call(obj.mtime) === '[object Date]' &&
-    'ino' in obj && typeof obj.ino === 'number' &&
-    'size' in obj && typeof obj.size === 'number'
-}
-
-/**
- * Generate a tag for a stat.
- *
- * @param {object} stat
- * @return {string}
- * @private
- */
-
-function stattag (stat) {
-  var mtime = stat.mtime.getTime().toString(16)
-  var size = stat.size.toString(16)
-
-  return '"' + size + '-' + mtime + '"'
-}
+	// Return the modified object
+	return target;
+};

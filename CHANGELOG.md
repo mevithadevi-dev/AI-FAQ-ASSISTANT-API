@@ -1,44 +1,83 @@
-# Changelog
+3.0.2 / 2018-07-19
+==================
+  * [Fix] Prevent merging `__proto__` property (#48)
+  * [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `tape`
+  * [Tests] up to `node` `v10.7`, `v9.11`, `v8.11`, `v7.10`, `v6.14`, `v4.9`; use `nvm install-latest-npm`
 
-All notable changes to this project will be documented in this file.
+3.0.1 / 2017-04-27
+==================
+  * [Fix] deep extending should work with a non-object (#46)
+  * [Dev Deps] update `tape`, `eslint`, `@ljharb/eslint-config`
+  * [Tests] up to `node` `v7.9`, `v6.10`, `v4.8`; improve matrix
+  * [Docs] Switch from vb.teelaun.ch to versionbadg.es for the npm version badge SVG.
+  * [Docs] Add example to readme (#34)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+3.0.0 / 2015-07-01
+==================
+  * [Possible breaking change] Use global "strict" directive (#32)
+  * [Tests] `int` is an ES3 reserved word
+  * [Tests] Test up to `io.js` `v2.3`
+  * [Tests] Add `npm run eslint`
+  * [Dev Deps] Update `covert`, `jscs`
 
-## [v1.1.2](https://github.com/es-shims/es-object-atoms/compare/v1.1.1...v1.1.2) - 2026-05-22
+2.0.1 / 2015-04-25
+==================
+  * Use an inline `isArray` check, for ES3 browsers. (#27)
+  * Some old browsers fail when an identifier is `toString`
+  * Test latest `node` and `io.js` versions on `travis-ci`; speed up builds
+  * Add license info to package.json (#25)
+  * Update `tape`, `jscs`
+  * Adding a CHANGELOG
 
-### Commits
+2.0.0 / 2014-10-01
+==================
+  * Increase code coverage to 100%; run code coverage as part of tests
+  * Add `npm run lint`; Run linter as part of tests
+  * Remove nodeType and setInterval checks in isPlainObject
+  * Updating `tape`, `jscs`, `covert`
+  * General style and README cleanup
 
-- [Dev Deps] update `@ljharb/eslint-config`, `@ljharb/tsconfig`, `auto-changelog`, `eslint`, `npmignore` [`41e3d94`](https://github.com/es-shims/es-object-atoms/commit/41e3d94f6b49237fa490ec598e068f170c8b161e)
-- [types] improve `isObject` type [`758edc2`](https://github.com/es-shims/es-object-atoms/commit/758edc2280fa6993a294a55957a43cee5951bf51)
+1.3.0 / 2014-06-20
+==================
+  * Add component.json for browser support (#18)
+  * Use SVG for badges in README (#16)
+  * Updating `tape`, `covert`
+  * Updating travis-ci to work with multiple node versions
+  * Fix `deep === false` bug (returning target as {}) (#14)
+  * Fixing constructor checks in isPlainObject
+  * Adding additional test coverage
+  * Adding `npm run coverage`
+  * Add LICENSE (#13)
+  * Adding a warning about `false`, per #11
+  * General style and whitespace cleanup
 
-## [v1.1.1](https://github.com/es-shims/es-object-atoms/compare/v1.1.0...v1.1.1) - 2025-01-14
+1.2.1 / 2013-09-14
+==================
+  * Fixing hasOwnProperty bugs that would only have shown up in specific browsers. Fixes #8
+  * Updating `tape`
 
-### Commits
+1.2.0 / 2013-09-02
+==================
+  * Updating the README: add badges
+  * Adding a missing variable reference.
+  * Using `tape` instead of `buster` for tests; add more tests (#7)
+  * Adding node 0.10 to Travis CI (#6)
+  * Enabling "npm test" and cleaning up package.json (#5)
+  * Add Travis CI.
 
-- [types] `ToObject`: improve types [`cfe8c8a`](https://github.com/es-shims/es-object-atoms/commit/cfe8c8a105c44820cb22e26f62d12ef0ad9715c8)
+1.1.3 / 2012-12-06
+==================
+  * Added unit tests.
+  * Ensure extend function is named. (Looks nicer in a stack trace.)
+  * README cleanup.
 
-## [v1.1.0](https://github.com/es-shims/es-object-atoms/compare/v1.0.1...v1.1.0) - 2025-01-14
+1.1.1 / 2012-11-07
+==================
+  * README cleanup.
+  * Added installation instructions.
+  * Added a missing semicolon
 
-### Commits
+1.0.0 / 2012-04-08
+==================
+  * Initial commit
 
-- [New] add `isObject` [`51e4042`](https://github.com/es-shims/es-object-atoms/commit/51e4042df722eb3165f40dc5f4bf33d0197ecb07)
-
-## [v1.0.1](https://github.com/es-shims/es-object-atoms/compare/v1.0.0...v1.0.1) - 2025-01-13
-
-### Commits
-
-- [Dev Deps] update `@ljharb/eslint-config`, `@ljharb/tsconfig`, `@types/tape`, `auto-changelog`, `tape` [`38ab9eb`](https://github.com/es-shims/es-object-atoms/commit/38ab9eb00b62c2f4668644f5e513d9b414ebd595)
-- [types] improve types [`7d1beb8`](https://github.com/es-shims/es-object-atoms/commit/7d1beb887958b78b6a728a210a1c8370ab7e2aa1)
-- [Tests] replace `aud` with `npm audit` [`25863ba`](https://github.com/es-shims/es-object-atoms/commit/25863baf99178f1d1ad33d1120498db28631907e)
-- [Dev Deps] add missing peer dep [`c012309`](https://github.com/es-shims/es-object-atoms/commit/c0123091287e6132d6f4240496340c427433df28)
-
-## v1.0.0 - 2024-03-16
-
-### Commits
-
-- Initial implementation, tests, readme, types [`f1499db`](https://github.com/es-shims/es-object-atoms/commit/f1499db7d3e1741e64979c61d645ab3137705e82)
-- Initial commit [`99eedc7`](https://github.com/es-shims/es-object-atoms/commit/99eedc7b5fde38a50a28d3c8b724706e3e4c5f6a)
-- [meta] rename repo [`fc851fa`](https://github.com/es-shims/es-object-atoms/commit/fc851fa70616d2d182aaf0bd02c2ed7084dea8fa)
-- npm init [`b909377`](https://github.com/es-shims/es-object-atoms/commit/b909377c50049bd0ec575562d20b0f9ebae8947f)
-- Only apps should have lockfiles [`7249edd`](https://github.com/es-shims/es-object-atoms/commit/7249edd2178c1b9ddfc66ffcc6d07fdf0d28efc1)

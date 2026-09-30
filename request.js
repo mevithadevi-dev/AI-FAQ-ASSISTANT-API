@@ -1,313 +1,525 @@
-/**
- * Request.js
- *
- * Request class contains server only options
- *
- * All spec algorithm step numbers are based on https://fetch.spec.whatwg.org/commit-snapshots/ae716822cb3a61843226cd090eefc6589446c1d2/.
+/*!
+ * express
+ * Copyright(c) 2009-2013 TJ Holowaychuk
+ * Copyright(c) 2013 Roman Shtylman
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
  */
 
-import {format as formatUrl} from 'node:url';
-import {deprecate} from 'node:util';
-import Headers from './headers.js';
-import Body, {clone, extractContentType, getTotalBytes} from './body.js';
-import {isAbortSignal} from './utils/is.js';
-import {getSearch} from './utils/get-search.js';
-import {
-	validateReferrerPolicy, determineRequestsReferrer, DEFAULT_REFERRER_POLICY
-} from './utils/referrer.js';
-
-const INTERNALS = Symbol('Request internals');
+'use strict';
 
 /**
- * Check if `obj` is an instance of Request.
- *
- * @param  {*} object
- * @return {boolean}
+ * Module dependencies.
+ * @private
  */
-const isRequest = object => {
-	return (
-		typeof object === 'object' &&
-		typeof object[INTERNALS] === 'object'
-	);
+
+var accepts = require('accepts');
+var deprecate = require('depd')('express');
+var isIP = require('net').isIP;
+var typeis = require('type-is');
+var http = require('http');
+var fresh = require('fresh');
+var parseRange = require('range-parser');
+var parse = require('parseurl');
+var proxyaddr = require('proxy-addr');
+
+/**
+ * Request prototype.
+ * @public
+ */
+
+var req = Object.create(http.IncomingMessage.prototype)
+
+/**
+ * Module exports.
+ * @public
+ */
+
+module.exports = req
+
+/**
+ * Return request header.
+ *
+ * The `Referrer` header field is special-cased,
+ * both `Referrer` and `Referer` are interchangeable.
+ *
+ * Examples:
+ *
+ *     req.get('Content-Type');
+ *     // => "text/plain"
+ *
+ *     req.get('content-type');
+ *     // => "text/plain"
+ *
+ *     req.get('Something');
+ *     // => undefined
+ *
+ * Aliased as `req.header()`.
+ *
+ * @param {String} name
+ * @return {String}
+ * @public
+ */
+
+req.get =
+req.header = function header(name) {
+  if (!name) {
+    throw new TypeError('name argument is required to req.get');
+  }
+
+  if (typeof name !== 'string') {
+    throw new TypeError('name must be a string to req.get');
+  }
+
+  var lc = name.toLowerCase();
+
+  switch (lc) {
+    case 'referer':
+    case 'referrer':
+      return this.headers.referrer
+        || this.headers.referer;
+    default:
+      return this.headers[lc];
+  }
 };
 
-const doBadDataWarn = deprecate(() => {},
-	'.data is not a valid RequestInit property, use .body instead',
-	'https://github.com/node-fetch/node-fetch/issues/1000 (request)');
+/**
+ * To do: update docs.
+ *
+ * Check if the given `type(s)` is acceptable, returning
+ * the best match when true, otherwise `undefined`, in which
+ * case you should respond with 406 "Not Acceptable".
+ *
+ * The `type` value may be a single MIME type string
+ * such as "application/json", an extension name
+ * such as "json", a comma-delimited list such as "json, html, text/plain",
+ * an argument list such as `"json", "html", "text/plain"`,
+ * or an array `["json", "html", "text/plain"]`. When a list
+ * or array is given, the _best_ match, if any is returned.
+ *
+ * Examples:
+ *
+ *     // Accept: text/html
+ *     req.accepts('html');
+ *     // => "html"
+ *
+ *     // Accept: text/*, application/json
+ *     req.accepts('html');
+ *     // => "html"
+ *     req.accepts('text/html');
+ *     // => "text/html"
+ *     req.accepts('json, text');
+ *     // => "json"
+ *     req.accepts('application/json');
+ *     // => "application/json"
+ *
+ *     // Accept: text/*, application/json
+ *     req.accepts('image/png');
+ *     req.accepts('png');
+ *     // => undefined
+ *
+ *     // Accept: text/*;q=.5, application/json
+ *     req.accepts(['html', 'json']);
+ *     req.accepts('html', 'json');
+ *     req.accepts('html, json');
+ *     // => "json"
+ *
+ * @param {String|Array} type(s)
+ * @return {String|Array|Boolean}
+ * @public
+ */
+
+req.accepts = function(){
+  var accept = accepts(this);
+  return accept.types.apply(accept, arguments);
+};
 
 /**
- * Request class
+ * Check if the given `encoding`s are accepted.
  *
- * Ref: https://fetch.spec.whatwg.org/#request-class
- *
- * @param   Mixed   input  Url or Request instance
- * @param   Object  init   Custom options
- * @return  Void
+ * @param {String} ...encoding
+ * @return {String|Array}
+ * @public
  */
-export default class Request extends Body {
-	constructor(input, init = {}) {
-		let parsedURL;
 
-		// Normalize input and force URL to be encoded as UTF-8 (https://github.com/node-fetch/node-fetch/issues/245)
-		if (isRequest(input)) {
-			parsedURL = new URL(input.url);
-		} else {
-			parsedURL = new URL(input);
-			input = {};
-		}
+req.acceptsEncodings = function(){
+  var accept = accepts(this);
+  return accept.encodings.apply(accept, arguments);
+};
 
-		if (parsedURL.username !== '' || parsedURL.password !== '') {
-			throw new TypeError(`${parsedURL} is an url with embedded credentials.`);
-		}
+req.acceptsEncoding = deprecate.function(req.acceptsEncodings,
+  'req.acceptsEncoding: Use acceptsEncodings instead');
 
-		let method = init.method || input.method || 'GET';
-		if (/^(delete|get|head|options|post|put)$/i.test(method)) {
-			method = method.toUpperCase();
-		}
+/**
+ * Check if the given `charset`s are acceptable,
+ * otherwise you should respond with 406 "Not Acceptable".
+ *
+ * @param {String} ...charset
+ * @return {String|Array}
+ * @public
+ */
 
-		if (!isRequest(init) && 'data' in init) {
-			doBadDataWarn();
-		}
+req.acceptsCharsets = function(){
+  var accept = accepts(this);
+  return accept.charsets.apply(accept, arguments);
+};
 
-		// eslint-disable-next-line no-eq-null, eqeqeq
-		if ((init.body != null || (isRequest(input) && input.body !== null)) &&
-			(method === 'GET' || method === 'HEAD')) {
-			throw new TypeError('Request with GET/HEAD method cannot have body');
-		}
+req.acceptsCharset = deprecate.function(req.acceptsCharsets,
+  'req.acceptsCharset: Use acceptsCharsets instead');
 
-		const inputBody = init.body ?
-			init.body :
-			(isRequest(input) && input.body !== null ?
-				clone(input) :
-				null);
+/**
+ * Check if the given `lang`s are acceptable,
+ * otherwise you should respond with 406 "Not Acceptable".
+ *
+ * @param {String} ...lang
+ * @return {String|Array}
+ * @public
+ */
 
-		super(inputBody, {
-			size: init.size || input.size || 0
-		});
+req.acceptsLanguages = function(){
+  var accept = accepts(this);
+  return accept.languages.apply(accept, arguments);
+};
 
-		const headers = new Headers(init.headers || input.headers || {});
+req.acceptsLanguage = deprecate.function(req.acceptsLanguages,
+  'req.acceptsLanguage: Use acceptsLanguages instead');
 
-		if (inputBody !== null && !headers.has('Content-Type')) {
-			const contentType = extractContentType(inputBody, this);
-			if (contentType) {
-				headers.set('Content-Type', contentType);
-			}
-		}
+/**
+ * Parse Range header field, capping to the given `size`.
+ *
+ * Unspecified ranges such as "0-" require knowledge of your resource length. In
+ * the case of a byte range this is of course the total number of bytes. If the
+ * Range header field is not given `undefined` is returned, `-1` when unsatisfiable,
+ * and `-2` when syntactically invalid.
+ *
+ * When ranges are returned, the array has a "type" property which is the type of
+ * range that is required (most commonly, "bytes"). Each array element is an object
+ * with a "start" and "end" property for the portion of the range.
+ *
+ * The "combine" option can be set to `true` and overlapping & adjacent ranges
+ * will be combined into a single range.
+ *
+ * NOTE: remember that ranges are inclusive, so for example "Range: users=0-3"
+ * should respond with 4 users when available, not 3.
+ *
+ * @param {number} size
+ * @param {object} [options]
+ * @param {boolean} [options.combine=false]
+ * @return {number|array}
+ * @public
+ */
 
-		let signal = isRequest(input) ?
-			input.signal :
-			null;
-		if ('signal' in init) {
-			signal = init.signal;
-		}
+req.range = function range(size, options) {
+  var range = this.get('Range');
+  if (!range) return;
+  return parseRange(size, range, options);
+};
 
-		// eslint-disable-next-line no-eq-null, eqeqeq
-		if (signal != null && !isAbortSignal(signal)) {
-			throw new TypeError('Expected signal to be an instanceof AbortSignal or EventTarget');
-		}
+/**
+ * Return the value of param `name` when present or `defaultValue`.
+ *
+ *  - Checks route placeholders, ex: _/user/:id_
+ *  - Checks body params, ex: id=12, {"id":12}
+ *  - Checks query string params, ex: ?id=12
+ *
+ * To utilize request bodies, `req.body`
+ * should be an object. This can be done by using
+ * the `bodyParser()` middleware.
+ *
+ * @param {String} name
+ * @param {Mixed} [defaultValue]
+ * @return {String}
+ * @public
+ */
 
-		// §5.4, Request constructor steps, step 15.1
-		// eslint-disable-next-line no-eq-null, eqeqeq
-		let referrer = init.referrer == null ? input.referrer : init.referrer;
-		if (referrer === '') {
-			// §5.4, Request constructor steps, step 15.2
-			referrer = 'no-referrer';
-		} else if (referrer) {
-			// §5.4, Request constructor steps, step 15.3.1, 15.3.2
-			const parsedReferrer = new URL(referrer);
-			// §5.4, Request constructor steps, step 15.3.3, 15.3.4
-			referrer = /^about:(\/\/)?client$/.test(parsedReferrer) ? 'client' : parsedReferrer;
-		} else {
-			referrer = undefined;
-		}
+req.param = function param(name, defaultValue) {
+  var params = this.params || {};
+  var body = this.body || {};
+  var query = this.query || {};
 
-		this[INTERNALS] = {
-			method,
-			redirect: init.redirect || input.redirect || 'follow',
-			headers,
-			parsedURL,
-			signal,
-			referrer
-		};
+  var args = arguments.length === 1
+    ? 'name'
+    : 'name, default';
+  deprecate('req.param(' + args + '): Use req.params, req.body, or req.query instead');
 
-		// Node-fetch-only options
-		this.follow = init.follow === undefined ? (input.follow === undefined ? 20 : input.follow) : init.follow;
-		this.compress = init.compress === undefined ? (input.compress === undefined ? true : input.compress) : init.compress;
-		this.counter = init.counter || input.counter || 0;
-		this.agent = init.agent || input.agent;
-		this.highWaterMark = init.highWaterMark || input.highWaterMark || 16384;
-		this.insecureHTTPParser = init.insecureHTTPParser || input.insecureHTTPParser || false;
+  if (null != params[name] && params.hasOwnProperty(name)) return params[name];
+  if (null != body[name]) return body[name];
+  if (null != query[name]) return query[name];
 
-		// §5.4, Request constructor steps, step 16.
-		// Default is empty string per https://fetch.spec.whatwg.org/#concept-request-referrer-policy
-		this.referrerPolicy = init.referrerPolicy || input.referrerPolicy || '';
-	}
+  return defaultValue;
+};
 
-	/** @returns {string} */
-	get method() {
-		return this[INTERNALS].method;
-	}
+/**
+ * Check if the incoming request contains the "Content-Type"
+ * header field, and it contains the given mime `type`.
+ *
+ * Examples:
+ *
+ *      // With Content-Type: text/html; charset=utf-8
+ *      req.is('html');
+ *      req.is('text/html');
+ *      req.is('text/*');
+ *      // => true
+ *
+ *      // When Content-Type is application/json
+ *      req.is('json');
+ *      req.is('application/json');
+ *      req.is('application/*');
+ *      // => true
+ *
+ *      req.is('html');
+ *      // => false
+ *
+ * @param {String|Array} types...
+ * @return {String|false|null}
+ * @public
+ */
 
-	/** @returns {string} */
-	get url() {
-		return formatUrl(this[INTERNALS].parsedURL);
-	}
+req.is = function is(types) {
+  var arr = types;
 
-	/** @returns {Headers} */
-	get headers() {
-		return this[INTERNALS].headers;
-	}
+  // support flattened arguments
+  if (!Array.isArray(types)) {
+    arr = new Array(arguments.length);
+    for (var i = 0; i < arr.length; i++) {
+      arr[i] = arguments[i];
+    }
+  }
 
-	get redirect() {
-		return this[INTERNALS].redirect;
-	}
+  return typeis(this, arr);
+};
 
-	/** @returns {AbortSignal} */
-	get signal() {
-		return this[INTERNALS].signal;
-	}
+/**
+ * Return the protocol string "http" or "https"
+ * when requested with TLS. When the "trust proxy"
+ * setting trusts the socket address, the
+ * "X-Forwarded-Proto" header field will be trusted
+ * and used if present.
+ *
+ * If you're running behind a reverse proxy that
+ * supplies https for you this may be enabled.
+ *
+ * @return {String}
+ * @public
+ */
 
-	// https://fetch.spec.whatwg.org/#dom-request-referrer
-	get referrer() {
-		if (this[INTERNALS].referrer === 'no-referrer') {
-			return '';
-		}
+defineGetter(req, 'protocol', function protocol(){
+  var proto = this.connection.encrypted
+    ? 'https'
+    : 'http';
+  var trust = this.app.get('trust proxy fn');
 
-		if (this[INTERNALS].referrer === 'client') {
-			return 'about:client';
-		}
+  if (!trust(this.connection.remoteAddress, 0)) {
+    return proto;
+  }
 
-		if (this[INTERNALS].referrer) {
-			return this[INTERNALS].referrer.toString();
-		}
+  // Note: X-Forwarded-Proto is normally only ever a
+  //       single value, but this is to be safe.
+  var header = this.get('X-Forwarded-Proto') || proto
+  var index = header.indexOf(',')
 
-		return undefined;
-	}
-
-	get referrerPolicy() {
-		return this[INTERNALS].referrerPolicy;
-	}
-
-	set referrerPolicy(referrerPolicy) {
-		this[INTERNALS].referrerPolicy = validateReferrerPolicy(referrerPolicy);
-	}
-
-	/**
-	 * Clone this request
-	 *
-	 * @return  Request
-	 */
-	clone() {
-		return new Request(this);
-	}
-
-	get [Symbol.toStringTag]() {
-		return 'Request';
-	}
-}
-
-Object.defineProperties(Request.prototype, {
-	method: {enumerable: true},
-	url: {enumerable: true},
-	headers: {enumerable: true},
-	redirect: {enumerable: true},
-	clone: {enumerable: true},
-	signal: {enumerable: true},
-	referrer: {enumerable: true},
-	referrerPolicy: {enumerable: true}
+  return index !== -1
+    ? header.substring(0, index).trim()
+    : header.trim()
 });
 
 /**
- * Convert a Request to Node.js http request options.
+ * Short-hand for:
  *
- * @param {Request} request - A Request instance
- * @return The options object to be passed to http.request
+ *    req.protocol === 'https'
+ *
+ * @return {Boolean}
+ * @public
  */
-export const getNodeRequestOptions = request => {
-	const {parsedURL} = request[INTERNALS];
-	const headers = new Headers(request[INTERNALS].headers);
 
-	// Fetch step 1.3
-	if (!headers.has('Accept')) {
-		headers.set('Accept', '*/*');
-	}
+defineGetter(req, 'secure', function secure(){
+  return this.protocol === 'https';
+});
 
-	// HTTP-network-or-cache fetch steps 2.4-2.7
-	let contentLengthValue = null;
-	if (request.body === null && /^(post|put)$/i.test(request.method)) {
-		contentLengthValue = '0';
-	}
+/**
+ * Return the remote address from the trusted proxy.
+ *
+ * The is the remote address on the socket unless
+ * "trust proxy" is set.
+ *
+ * @return {String}
+ * @public
+ */
 
-	if (request.body !== null) {
-		const totalBytes = getTotalBytes(request);
-		// Set Content-Length if totalBytes is a number (that is not NaN)
-		if (typeof totalBytes === 'number' && !Number.isNaN(totalBytes)) {
-			contentLengthValue = String(totalBytes);
-		}
-	}
+defineGetter(req, 'ip', function ip(){
+  var trust = this.app.get('trust proxy fn');
+  return proxyaddr(this, trust);
+});
 
-	if (contentLengthValue) {
-		headers.set('Content-Length', contentLengthValue);
-	}
+/**
+ * When "trust proxy" is set, trusted proxy addresses + client.
+ *
+ * For example if the value were "client, proxy1, proxy2"
+ * you would receive the array `["client", "proxy1", "proxy2"]`
+ * where "proxy2" is the furthest down-stream and "proxy1" and
+ * "proxy2" were trusted.
+ *
+ * @return {Array}
+ * @public
+ */
 
-	// 4.1. Main fetch, step 2.6
-	// > If request's referrer policy is the empty string, then set request's referrer policy to the
-	// > default referrer policy.
-	if (request.referrerPolicy === '') {
-		request.referrerPolicy = DEFAULT_REFERRER_POLICY;
-	}
+defineGetter(req, 'ips', function ips() {
+  var trust = this.app.get('trust proxy fn');
+  var addrs = proxyaddr.all(this, trust);
 
-	// 4.1. Main fetch, step 2.7
-	// > If request's referrer is not "no-referrer", set request's referrer to the result of invoking
-	// > determine request's referrer.
-	if (request.referrer && request.referrer !== 'no-referrer') {
-		request[INTERNALS].referrer = determineRequestsReferrer(request);
-	} else {
-		request[INTERNALS].referrer = 'no-referrer';
-	}
+  // reverse the order (to farthest -> closest)
+  // and remove socket address
+  addrs.reverse().pop()
 
-	// 4.5. HTTP-network-or-cache fetch, step 6.9
-	// > If httpRequest's referrer is a URL, then append `Referer`/httpRequest's referrer, serialized
-	// >  and isomorphic encoded, to httpRequest's header list.
-	if (request[INTERNALS].referrer instanceof URL) {
-		headers.set('Referer', request.referrer);
-	}
+  return addrs
+});
 
-	// HTTP-network-or-cache fetch step 2.11
-	if (!headers.has('User-Agent')) {
-		headers.set('User-Agent', 'node-fetch');
-	}
+/**
+ * Return subdomains as an array.
+ *
+ * Subdomains are the dot-separated parts of the host before the main domain of
+ * the app. By default, the domain of the app is assumed to be the last two
+ * parts of the host. This can be changed by setting "subdomain offset".
+ *
+ * For example, if the domain is "tobi.ferrets.example.com":
+ * If "subdomain offset" is not set, req.subdomains is `["ferrets", "tobi"]`.
+ * If "subdomain offset" is 3, req.subdomains is `["tobi"]`.
+ *
+ * @return {Array}
+ * @public
+ */
 
-	// HTTP-network-or-cache fetch step 2.15
-	if (request.compress && !headers.has('Accept-Encoding')) {
-		headers.set('Accept-Encoding', 'gzip, deflate, br');
-	}
+defineGetter(req, 'subdomains', function subdomains() {
+  var hostname = this.hostname;
 
-	let {agent} = request;
-	if (typeof agent === 'function') {
-		agent = agent(parsedURL);
-	}
+  if (!hostname) return [];
 
-	// HTTP-network fetch step 4.2
-	// chunked encoding is handled by Node.js
+  var offset = this.app.get('subdomain offset');
+  var subdomains = !isIP(hostname)
+    ? hostname.split('.').reverse()
+    : [hostname];
 
-	const search = getSearch(parsedURL);
+  return subdomains.slice(offset);
+});
 
-	// Pass the full URL directly to request(), but overwrite the following
-	// options:
-	const options = {
-		// Overwrite search to retain trailing ? (issue #776)
-		path: parsedURL.pathname + search,
-		// The following options are not expressed in the URL
-		method: request.method,
-		headers: headers[Symbol.for('nodejs.util.inspect.custom')](),
-		insecureHTTPParser: request.insecureHTTPParser,
-		agent
-	};
+/**
+ * Short-hand for `url.parse(req.url).pathname`.
+ *
+ * @return {String}
+ * @public
+ */
 
-	return {
-		/** @type {URL} */
-		parsedURL,
-		options
-	};
-};
+defineGetter(req, 'path', function path() {
+  return parse(this).pathname;
+});
+
+/**
+ * Parse the "Host" header field to a hostname.
+ *
+ * When the "trust proxy" setting trusts the socket
+ * address, the "X-Forwarded-Host" header field will
+ * be trusted.
+ *
+ * @return {String}
+ * @public
+ */
+
+defineGetter(req, 'hostname', function hostname(){
+  var trust = this.app.get('trust proxy fn');
+  var host = this.get('X-Forwarded-Host');
+
+  if (!host || !trust(this.connection.remoteAddress, 0)) {
+    host = this.get('Host');
+  } else if (host.indexOf(',') !== -1) {
+    // Note: X-Forwarded-Host is normally only ever a
+    //       single value, but this is to be safe.
+    host = host.substring(0, host.indexOf(',')).trimRight()
+  }
+
+  if (!host) return;
+
+  // IPv6 literal support
+  var offset = host[0] === '['
+    ? host.indexOf(']') + 1
+    : 0;
+  var index = host.indexOf(':', offset);
+
+  return index !== -1
+    ? host.substring(0, index)
+    : host;
+});
+
+// TODO: change req.host to return host in next major
+
+defineGetter(req, 'host', deprecate.function(function host(){
+  return this.hostname;
+}, 'req.host: Use req.hostname instead'));
+
+/**
+ * Check if the request is fresh, aka
+ * Last-Modified and/or the ETag
+ * still match.
+ *
+ * @return {Boolean}
+ * @public
+ */
+
+defineGetter(req, 'fresh', function(){
+  var method = this.method;
+  var res = this.res
+  var status = res.statusCode
+
+  // GET, HEAD, or QUERY for weak freshness validation only
+  if ('GET' !== method && 'HEAD' !== method && 'QUERY' !== method) return false;
+
+  // 2xx or 304 as per rfc2616 14.26
+  if ((status >= 200 && status < 300) || 304 === status) {
+    return fresh(this.headers, {
+      'etag': res.get('ETag'),
+      'last-modified': res.get('Last-Modified')
+    })
+  }
+
+  return false;
+});
+
+/**
+ * Check if the request is stale, aka
+ * "Last-Modified" and / or the "ETag" for the
+ * resource has changed.
+ *
+ * @return {Boolean}
+ * @public
+ */
+
+defineGetter(req, 'stale', function stale(){
+  return !this.fresh;
+});
+
+/**
+ * Check if the request was an _XMLHttpRequest_.
+ *
+ * @return {Boolean}
+ * @public
+ */
+
+defineGetter(req, 'xhr', function xhr(){
+  var val = this.get('X-Requested-With') || '';
+  return val.toLowerCase() === 'xmlhttprequest';
+});
+
+/**
+ * Helper function for creating a getter on an object.
+ *
+ * @param {Object} obj
+ * @param {String} name
+ * @param {Function} getter
+ * @private
+ */
+function defineGetter(obj, name, getter) {
+  Object.defineProperty(obj, name, {
+    configurable: true,
+    enumerable: true,
+    get: getter
+  });
+}
