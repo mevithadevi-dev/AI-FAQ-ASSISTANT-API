@@ -1,176 +1,230 @@
 "use strict";
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LRUCache = void 0;
-exports.snakeToCamel = snakeToCamel;
-exports.originalOrCamelOptions = originalOrCamelOptions;
-exports.removeUndefinedValuesInObject = removeUndefinedValuesInObject;
-exports.isValidFile = isValidFile;
-exports.getWellKnownCertificateConfigFileLocation = getWellKnownCertificateConfigFileLocation;
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
-const WELL_KNOWN_CERTIFICATE_CONFIG_FILE = 'certificate_config.json';
-const CLOUDSDK_CONFIG_DIRECTORY = 'gcloud';
+
 /**
- * Returns the camel case of a provided string.
- *
- * @remarks
- *
- * Match any `_` and not `_` pair, then return the uppercase of the not `_`
- * character.
- *
- * @param str the string to convert
- * @returns the camelCase'd string
+ * Various utility functions.
+ * @namespace
  */
-function snakeToCamel(str) {
-    return str.replace(/([_][^_])/g, match => match.slice(1).toUpperCase());
-}
+var util = module.exports = require("./util/minimal");
+
+var roots = require("./roots");
+
+var Type, // cyclic
+    Enum;
+
+util.codegen = require("@protobufjs/codegen");
+util.fetch   = require("@protobufjs/fetch");
+util.path    = require("@protobufjs/path");
+util.patterns = require("./util/patterns");
+
+var reservedRe = util.patterns.reservedRe;
+
 /**
- * Get the value of `obj[key]` or `obj[camelCaseKey]`, with a preference
- * for original, non-camelCase key.
- *
- * @param obj object to lookup a value in
- * @returns a `get` function for getting `obj[key || snakeKey]`, if available
+ * Node's fs module if available.
+ * @type {Object.<string,*>}
  */
-function originalOrCamelOptions(obj) {
-    /**
-     *
-     * @param key an index of object, preferably snake_case
-     * @returns the value `obj[key || snakeKey]`, if available
-     */
-    function get(key) {
-        const o = (obj || {});
-        return o[key] ?? o[snakeToCamel(key)];
-    }
-    return { get };
-}
+util.fs = require("./util/fs");
+
 /**
- * A simple LRU cache utility.
- * Not meant for external usage.
- *
- * @experimental
+ * Checks a recursion depth.
+ * @param {number|undefined} depth Depth of recursion
+ * @returns {number} Depth of recursion
+ * @throws {Error} If depth exceeds util.recursionLimit
  */
-class LRUCache {
-    capacity;
-    /**
-     * Maps are in order. Thus, the older item is the first item.
-     *
-     * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map}
-     */
-    #cache = new Map();
-    maxAge;
-    constructor(options) {
-        this.capacity = options.capacity;
-        this.maxAge = options.maxAge;
+util.checkDepth = function checkDepth(depth) {
+    if (depth === undefined)
+        depth = 0;
+    if (depth > util.recursionLimit)
+        throw Error("max depth exceeded");
+    return depth;
+};
+
+/**
+ * Converts an object's values to an array.
+ * @param {Object.<string,*>} object Object to convert
+ * @returns {Array.<*>} Converted array
+ */
+util.toArray = function toArray(object) {
+    if (object) {
+        var keys  = Object.keys(object),
+            array = new Array(keys.length),
+            index = 0;
+        while (index < keys.length)
+            array[index] = object[keys[index++]];
+        return array;
     }
-    /**
-     * Moves the key to the end of the cache.
-     *
-     * @param key the key to move
-     * @param value the value of the key
-     */
-    #moveToEnd(key, value) {
-        this.#cache.delete(key);
-        this.#cache.set(key, {
-            value,
-            lastAccessed: Date.now(),
-        });
+    return [];
+};
+
+/**
+ * Converts an array of keys immediately followed by their respective value to an object, omitting undefined values.
+ * @param {Array.<*>} array Array to convert
+ * @returns {Object.<string,*>} Converted object
+ */
+util.toObject = function toObject(array) {
+    var object = {},
+        index  = 0;
+    while (index < array.length) {
+        var key = array[index++],
+            val = array[index++];
+        if (val !== undefined)
+            object[key] = val;
     }
-    /**
-     * Add an item to the cache.
-     *
-     * @param key the key to upsert
-     * @param value the value of the key
-     */
-    set(key, value) {
-        this.#moveToEnd(key, value);
-        this.#evict();
-    }
-    /**
-     * Get an item from the cache.
-     *
-     * @param key the key to retrieve
-     */
-    get(key) {
-        const item = this.#cache.get(key);
-        if (!item)
-            return;
-        this.#moveToEnd(key, item.value);
-        this.#evict();
-        return item.value;
-    }
-    /**
-     * Maintain the cache based on capacity and TTL.
-     */
-    #evict() {
-        const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
-        /**
-         * Because we know Maps are in order, this item is both the
-         * last item in the list (capacity) and oldest (maxAge).
-         */
-        let oldestItem = this.#cache.entries().next();
-        while (!oldestItem.done &&
-            (this.#cache.size > this.capacity || // too many
-                oldestItem.value[1].lastAccessed < cutoffDate) // too old
-        ) {
-            this.#cache.delete(oldestItem.value[0]);
-            oldestItem = this.#cache.entries().next();
-        }
-    }
-}
-exports.LRUCache = LRUCache;
-// Given and object remove fields where value is undefined.
-function removeUndefinedValuesInObject(object) {
-    Object.entries(object).forEach(([key, value]) => {
-        if (value === undefined || value === 'undefined') {
-            delete object[key];
-        }
-    });
     return object;
-}
+};
+
 /**
- * Helper to check if a path points to a valid file.
+ * Tests whether the specified name is a reserved word in JS.
+ * @param {string} name Name to test
+ * @returns {boolean} `true` if reserved, otherwise `false`
  */
-async function isValidFile(filePath) {
-    try {
-        const stats = await fs.promises.lstat(filePath);
-        return stats.isFile();
+util.isReserved = function isReserved(name) {
+    return reservedRe.test(name);
+};
+
+/**
+ * Returns a safe property accessor for the specified property name.
+ * @param {string} prop Property name
+ * @returns {string} Safe accessor
+ */
+util.safeProp = function safeProp(prop) {
+    if (!/^[$\w_]+$/.test(prop) || reservedRe.test(prop))
+        return "[" + JSON.stringify(prop) + "]";
+    return "." + prop;
+};
+
+/**
+ * Converts the first character of a string to upper case.
+ * @param {string} str String to convert
+ * @returns {string} Converted string
+ */
+util.ucFirst = function ucFirst(str) {
+    return str.charAt(0).toUpperCase() + str.substring(1);
+};
+
+var camelCaseRe = /_([a-z])/g;
+
+/**
+ * Converts a string to camel case.
+ * @param {string} str String to convert
+ * @returns {string} Converted string
+ */
+util.camelCase = function camelCase(str) {
+    return str.substring(0, 1)
+         + str.substring(1)
+               .replace(camelCaseRe, function($0, $1) { return $1.toUpperCase(); });
+};
+
+/**
+ * Compares reflected fields by id.
+ * @param {Field} a First field
+ * @param {Field} b Second field
+ * @returns {number} Comparison value
+ */
+util.compareFieldsById = function compareFieldsById(a, b) {
+    return a.id - b.id;
+};
+
+/**
+ * Decorator helper for types (TypeScript).
+ * @param {Constructor<T>} ctor Constructor function
+ * @param {string} [typeName] Type name, defaults to the constructor's name
+ * @returns {Type} Reflected type
+ * @template T extends Message<T>
+ * @property {Root} root Decorators root
+ */
+util.decorateType = function decorateType(ctor, typeName) {
+
+    /* istanbul ignore if */
+    if (ctor.$type) {
+        if (typeName && ctor.$type.name !== typeName) {
+            util.decorateRoot.remove(ctor.$type);
+            ctor.$type.name = typeName;
+            util.decorateRoot.add(ctor.$type);
+        }
+        return ctor.$type;
     }
-    catch (e) {
-        return false;
+
+    /* istanbul ignore next */
+    if (!Type)
+        Type = require("./type");
+
+    var type = new Type(typeName || ctor.name);
+    util.decorateRoot.add(type);
+    type.ctor = ctor; // sets up .encode, .decode etc.
+    Object.defineProperty(ctor, "$type", { value: type, enumerable: false });
+    Object.defineProperty(ctor.prototype, "$type", { value: type, enumerable: false });
+    return type;
+};
+
+var decorateEnumIndex = 0;
+
+/**
+ * Decorator helper for enums (TypeScript).
+ * @param {Object} object Enum object
+ * @returns {Enum} Reflected enum
+ */
+util.decorateEnum = function decorateEnum(object) {
+
+    /* istanbul ignore if */
+    if (object.$type)
+        return object.$type;
+
+    /* istanbul ignore next */
+    if (!Enum)
+        Enum = require("./enum");
+
+    var enm = new Enum("Enum" + decorateEnumIndex++, object);
+    util.decorateRoot.add(enm);
+    Object.defineProperty(object, "$type", { value: enm, enumerable: false });
+    return enm;
+};
+
+
+/**
+ * Sets the value of a property by property path. If a value already exists, it is turned to an array
+ * @param {Object.<string,*>} dst Destination object
+ * @param {string} path dot '.' delimited path of the property to set
+ * @param {Object} value the value to set
+ * @param {boolean|undefined} [ifNotSet] Sets the option only if it isn't currently set
+ * @returns {Object.<string,*>} Destination object
+ */
+util.setProperty = function setProperty(dst, path, value, ifNotSet) {
+    function setProp(dst, path, value) {
+        var part = path.shift();
+        if (util.isUnsafeProperty(part))
+            return dst;
+        if (path.length > 0) {
+            dst[part] = setProp(dst[part] || {}, path, value);
+        } else {
+            var prevValue = dst[part];
+            if (prevValue && ifNotSet)
+                return dst;
+            if (prevValue)
+                value = [].concat(prevValue).concat(value);
+            dst[part] = value;
+        }
+        return dst;
     }
-}
+
+    if (typeof dst !== "object")
+        throw TypeError("dst must be an object");
+    if (!path)
+        throw TypeError("path must be specified");
+
+    path = path.split(".");
+    if (path.length > util.recursionLimit)
+        throw Error("max depth exceeded");
+    return setProp(dst, path, value);
+};
+
 /**
- * Determines the well-known gcloud location for the certificate config file.
- * @returns The platform-specific path to the configuration file.
- * @internal
+ * Decorator root (TypeScript).
+ * @name util.decorateRoot
+ * @type {Root}
+ * @readonly
  */
-function getWellKnownCertificateConfigFileLocation() {
-    const configDir = process.env.CLOUDSDK_CONFIG ||
-        (_isWindows()
-            ? path.join(process.env.APPDATA || '', CLOUDSDK_CONFIG_DIRECTORY)
-            : path.join(process.env.HOME || '', '.config', CLOUDSDK_CONFIG_DIRECTORY));
-    return path.join(configDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
-}
-/**
- * Checks if the current operating system is Windows.
- * @returns True if the OS is Windows, false otherwise.
- * @internal
- */
-function _isWindows() {
-    return os.platform().startsWith('win');
-}
-//# sourceMappingURL=util.js.map
+Object.defineProperty(util, "decorateRoot", {
+    get: function() {
+        return roots["decorated"] || (roots["decorated"] = new (require("./root"))());
+    }
+});
