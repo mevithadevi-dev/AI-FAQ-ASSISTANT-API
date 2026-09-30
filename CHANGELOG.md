@@ -1,91 +1,823 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+<a name="2.6.0"></a>
+## 2.6.0 (2024-03-04)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+* feat: add TypeScript types
 
-## [v1.1.0](https://github.com/inspect-js/has-symbols/compare/v1.0.3...v1.1.0) - 2024-12-02
+<a name="2.5.1"></a>
+## 2.5.1 (2023-01-06)
 
-### Commits
+* fix: avoid passing final callback to pre hook, because calling the callback can mess up hook execution #36 Automattic/mongoose#12836
 
-- [actions] update workflows [`548c0bf`](https://github.com/inspect-js/has-symbols/commit/548c0bf8c9b1235458df7a1c0490b0064647a282)
-- [actions] further shard; update action deps [`bec56bb`](https://github.com/inspect-js/has-symbols/commit/bec56bb0fb44b43a786686b944875a3175cf3ff3)
-- [meta] use `npmignore` to autogenerate an npmignore file [`ac81032`](https://github.com/inspect-js/has-symbols/commit/ac81032809157e0a079e5264e9ce9b6f1275777e)
-- [New] add types [`6469cbf`](https://github.com/inspect-js/has-symbols/commit/6469cbff1866cfe367b2b3d181d9296ec14b2a3d)
-- [actions] update rebase action to use reusable workflow [`9c9d4d0`](https://github.com/inspect-js/has-symbols/commit/9c9d4d0d8938e4b267acdf8e421f4e92d1716d72)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `tape` [`adb5887`](https://github.com/inspect-js/has-symbols/commit/adb5887ca9444849b08beb5caaa9e1d42320cdfb)
-- [Dev Deps] update `@ljharb/eslint-config`, `aud`, `tape` [`13ec198`](https://github.com/inspect-js/has-symbols/commit/13ec198ec80f1993a87710af1606a1970b22c7cb)
-- [Dev Deps] update `auto-changelog`, `core-js`, `tape` [`941be52`](https://github.com/inspect-js/has-symbols/commit/941be5248387cab1da72509b22acf3fdb223f057)
-- [Tests] replace `aud` with `npm audit` [`74f49e9`](https://github.com/inspect-js/has-symbols/commit/74f49e9a9d17a443020784234a1c53ce765b3559)
-- [Dev Deps] update `npmignore` [`9c0ac04`](https://github.com/inspect-js/has-symbols/commit/9c0ac0452a834f4c2a4b54044f2d6a89f17e9a70)
-- [Dev Deps] add missing peer dep [`52337a5`](https://github.com/inspect-js/has-symbols/commit/52337a5621cced61f846f2afdab7707a8132cc12)
+<a name="2.5.0"></a>
+## 2.5.0 (2022-12-01)
 
-## [v1.0.3](https://github.com/inspect-js/has-symbols/compare/v1.0.2...v1.0.3) - 2022-03-01
+* feat: add errorHandler option to `post()` #34
 
-### Commits
+<a name="2.4.0"></a>
+## 2.4.0 (2022-06-13)
 
-- [actions] use `node/install` instead of `node/run`; use `codecov` action [`518b28f`](https://github.com/inspect-js/has-symbols/commit/518b28f6c5a516cbccae30794e40aa9f738b1693)
-- [meta] add `bugs` and `homepage` fields; reorder package.json [`c480b13`](https://github.com/inspect-js/has-symbols/commit/c480b13fd6802b557e1cef9749872cb5fdeef744)
-- [actions] reuse common workflows [`01d0ee0`](https://github.com/inspect-js/has-symbols/commit/01d0ee0a8d97c0947f5edb73eb722027a77b2b07)
-- [actions] update codecov uploader [`6424ebe`](https://github.com/inspect-js/has-symbols/commit/6424ebe86b2c9c7c3d2e9bd4413a4e4f168cb275)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `auto-changelog`, `tape` [`dfa7e7f`](https://github.com/inspect-js/has-symbols/commit/dfa7e7ff38b594645d8c8222aab895157fa7e282)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `safe-publish-latest`, `tape` [`0c8d436`](https://github.com/inspect-js/has-symbols/commit/0c8d43685c45189cea9018191d4fd7eca91c9d02)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `tape` [`9026554`](https://github.com/inspect-js/has-symbols/commit/902655442a1bf88e72b42345494ef0c60f5d36ab)
-- [readme] add actions and codecov badges [`eaa9682`](https://github.com/inspect-js/has-symbols/commit/eaa9682f990f481d3acf7a1c7600bec36f7b3adc)
-- [Dev Deps] update `eslint`, `tape` [`bc7a3ba`](https://github.com/inspect-js/has-symbols/commit/bc7a3ba46f27b7743f8a2579732d59d1b9ac791e)
-- [Dev Deps] update `eslint`, `auto-changelog` [`0ace00a`](https://github.com/inspect-js/has-symbols/commit/0ace00af08a88cdd1e6ce0d60357d941c60c2d9f)
-- [meta] use `prepublishOnly` script for npm 7+ [`093f72b`](https://github.com/inspect-js/has-symbols/commit/093f72bc2b0ed00c781f444922a5034257bf561d)
-- [Tests] test on all 16 minors [`9b80d3d`](https://github.com/inspect-js/has-symbols/commit/9b80d3d9102529f04c20ec5b1fcc6e38426c6b03)
+* feat: add `overwriteResult()` and `skipWrappedFunction()` for more advanced control flow
 
-## [v1.0.2](https://github.com/inspect-js/has-symbols/compare/v1.0.1...v1.0.2) - 2021-02-27
+<a name="2.3.4"></a>
+## 2.3.4 (2022-02-10)
 
-### Fixed
+* perf: various performance improvements #27 #24 #23 #22 #21 #20
 
-- [Fix] use a universal way to get the original Symbol [`#11`](https://github.com/inspect-js/has-symbols/issues/11)
+<a name="2.3.3"></a>
+## 2.3.3 (2021-12-26)
 
-### Commits
+* fix: handle sync errors in `wrap()`
 
-- [Tests] migrate tests to Github Actions [`90ae798`](https://github.com/inspect-js/has-symbols/commit/90ae79820bdfe7bc703d67f5f3c5e205f98556d3)
-- [meta] do not publish github action workflow files [`29e60a1`](https://github.com/inspect-js/has-symbols/commit/29e60a1b7c25c7f1acf7acff4a9320d0d10c49b4)
-- [Tests] run `nyc` on all tests [`8476b91`](https://github.com/inspect-js/has-symbols/commit/8476b915650d360915abe2522505abf4b0e8f0ae)
-- [readme] fix repo URLs, remove defunct badges [`126288e`](https://github.com/inspect-js/has-symbols/commit/126288ecc1797c0a40247a6b78bcb2e0bc5d7036)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `auto-changelog`, `core-js`, `get-own-property-symbols` [`d84bdfa`](https://github.com/inspect-js/has-symbols/commit/d84bdfa48ac5188abbb4904b42614cd6c030940a)
-- [Tests] fix linting errors [`0df3070`](https://github.com/inspect-js/has-symbols/commit/0df3070b981b6c9f2ee530c09189a7f5c6def839)
-- [actions] add "Allow Edits" workflow [`1e6bc29`](https://github.com/inspect-js/has-symbols/commit/1e6bc29b188f32b9648657b07eda08504be5aa9c)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `tape` [`36cea2a`](https://github.com/inspect-js/has-symbols/commit/36cea2addd4e6ec435f35a2656b4e9ef82498e9b)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `tape` [`1278338`](https://github.com/inspect-js/has-symbols/commit/127833801865fbc2cc8979beb9ca869c7bfe8222)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `aud`, `tape` [`1493254`](https://github.com/inspect-js/has-symbols/commit/1493254eda13db5fb8fc5e4a3e8324b3d196029d)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `core-js` [`b090bf2`](https://github.com/inspect-js/has-symbols/commit/b090bf214d3679a30edc1e2d729d466ab5183e1d)
-- [actions] switch Automatic Rebase workflow to `pull_request_target` event [`4addb7a`](https://github.com/inspect-js/has-symbols/commit/4addb7ab4dc73f927ae99928d68817554fc21dc0)
-- [Dev Deps] update `auto-changelog`, `tape` [`81d0baf`](https://github.com/inspect-js/has-symbols/commit/81d0baf3816096a89a8558e8043895f7a7d10d8b)
-- [Dev Deps] update `auto-changelog`; add `aud` [`1a4e561`](https://github.com/inspect-js/has-symbols/commit/1a4e5612c25d91c3a03d509721d02630bc4fe3da)
-- [readme] remove unused testling URLs [`3000941`](https://github.com/inspect-js/has-symbols/commit/3000941f958046e923ed8152edb1ef4a599e6fcc)
-- [Tests] only audit prod deps [`692e974`](https://github.com/inspect-js/has-symbols/commit/692e9743c912410e9440207631a643a34b4741a1)
-- [Dev Deps] update `@ljharb/eslint-config` [`51c946c`](https://github.com/inspect-js/has-symbols/commit/51c946c7f6baa793ec5390bb5a45cdce16b4ba76)
+<a name="2.3.2"></a>
+## 2.3.2 (2020-12-08)
 
-## [v1.0.1](https://github.com/inspect-js/has-symbols/compare/v1.0.0...v1.0.1) - 2019-11-16
+* fix: handle sync errors in pre hooks if there are multiple hooks
 
-### Commits
+<a name="2.3.0"></a>
+## 2.3.0 (2018-09-24)
 
-- [Tests] use shared travis-ci configs [`ce396c9`](https://github.com/inspect-js/has-symbols/commit/ce396c9419ff11c43d0da5d05cdbb79f7fb42229)
-- [Tests] up to `node` `v12.4`, `v11.15`, `v10.15`, `v9.11`, `v8.15`, `v7.10`, `v6.17`, `v4.9`; use `nvm install-latest-npm` [`0690732`](https://github.com/inspect-js/has-symbols/commit/0690732801f47ab429f39ba1962f522d5c462d6b)
-- [meta] add `auto-changelog` [`2163d0b`](https://github.com/inspect-js/has-symbols/commit/2163d0b7f36343076b8f947cd1667dd1750f26fc)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `core-js`, `safe-publish-latest`, `tape` [`8e0951f`](https://github.com/inspect-js/has-symbols/commit/8e0951f1a7a2e52068222b7bb73511761e6e4d9c)
-- [actions] add automatic rebasing / merge commit blocking [`b09cdb7`](https://github.com/inspect-js/has-symbols/commit/b09cdb7cd7ee39e7a769878f56e2d6066f5ccd1d)
-- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `safe-publish-latest`, `core-js`, `get-own-property-symbols`, `tape` [`1dd42cd`](https://github.com/inspect-js/has-symbols/commit/1dd42cd86183ed0c50f99b1062345c458babca91)
-- [meta] create FUNDING.yml [`aa57a17`](https://github.com/inspect-js/has-symbols/commit/aa57a17b19708906d1927f821ea8e73394d84ca4)
-- Only apps should have lockfiles [`a2d8bea`](https://github.com/inspect-js/has-symbols/commit/a2d8bea23a97d15c09eaf60f5b107fcf9a4d57aa)
-- [Tests] use `npx aud` instead of `nsp` or `npm audit` with hoops [`9e96cb7`](https://github.com/inspect-js/has-symbols/commit/9e96cb783746cbed0c10ef78e599a8eaa7ebe193)
-- [meta] add `funding` field [`a0b32cf`](https://github.com/inspect-js/has-symbols/commit/a0b32cf68e803f963c1639b6d47b0a9d6440bab0)
-- [Dev Deps] update `safe-publish-latest` [`cb9f0a5`](https://github.com/inspect-js/has-symbols/commit/cb9f0a521a3a1790f1064d437edd33bb6c3d6af0)
+* chore(release): 2.2.3 ([c8f2695](https://github.com/vkarpov15/kareem/commit/c8f2695))
+* chore(release): 2.2.4 ([a377a4f](https://github.com/vkarpov15/kareem/commit/a377a4f))
+* chore(release): 2.2.5 ([5a495e3](https://github.com/vkarpov15/kareem/commit/5a495e3))
+* fix(filter): copy async pres correctly with `filter()` ([1b1ed8a](https://github.com/vkarpov15/kareem/commit/1b1ed8a)), closes [Automattic/mongoose#3054](https://github.com/Automattic/mongoose/issues/3054)
+* feat: add filter() function ([1f641f4](https://github.com/vkarpov15/kareem/commit/1f641f4))
+* feat: support storing options on pre and post hooks ([59220b9](https://github.com/vkarpov15/kareem/commit/59220b9))
 
-## v1.0.0 - 2016-09-19
 
-### Commits
 
-- Tests. [`ecb6eb9`](https://github.com/inspect-js/has-symbols/commit/ecb6eb934e4883137f3f93b965ba5e0a98df430d)
-- package.json [`88a337c`](https://github.com/inspect-js/has-symbols/commit/88a337cee0864a0da35f5d19e69ff0ef0150e46a)
-- Initial commit [`42e1e55`](https://github.com/inspect-js/has-symbols/commit/42e1e5502536a2b8ac529c9443984acd14836b1c)
-- Initial implementation. [`33f5cc6`](https://github.com/inspect-js/has-symbols/commit/33f5cc6cdff86e2194b081ee842bfdc63caf43fb)
-- read me [`01f1170`](https://github.com/inspect-js/has-symbols/commit/01f1170188ff7cb1558aa297f6ba5b516c6d7b0c)
+<a name="2.2.3"></a>
+## <small>2.2.3 (2018-09-10)</small>
+
+* chore: release 2.2.3 ([af653a3](https://github.com/vkarpov15/kareem/commit/af653a3))
+
+
+
+<a name="2.2.2"></a>
+## <small>2.2.2 (2018-09-10)</small>
+
+* chore: release 2.2.2 ([3f0144d](https://github.com/vkarpov15/kareem/commit/3f0144d))
+* fix: allow merge() to not clone ([e628d65](https://github.com/vkarpov15/kareem/commit/e628d65))
+
+
+
+<a name="2.2.1"></a>
+## <small>2.2.1 (2018-06-05)</small>
+
+* chore: release 2.2.1 ([4625a64](https://github.com/vkarpov15/kareem/commit/4625a64))
+* chore: remove lockfile from git ([7f3e4e6](https://github.com/vkarpov15/kareem/commit/7f3e4e6))
+* fix: handle numAsync correctly when merging ([fef8e7e](https://github.com/vkarpov15/kareem/commit/fef8e7e))
+* test: repro issue with not copying numAsync ([952d9db](https://github.com/vkarpov15/kareem/commit/952d9db))
+
+
+
+<a name="2.2.0"></a>
+## 2.2.0 (2018-06-05)
+
+* chore: release 2.2.0 ([ff9ad03](https://github.com/vkarpov15/kareem/commit/ff9ad03))
+* fix: use maps instead of objects for _pres and _posts so `toString()` doesn't get reported as having ([55df303](https://github.com/vkarpov15/kareem/commit/55df303)), closes [Automattic/mongoose#6538](https://github.com/Automattic/mongoose/issues/6538)
+
+
+
+<a name="2.1.0"></a>
+## 2.1.0 (2018-05-16)
+
+* chore: release 2.1.0 ([ba5f1bc](https://github.com/vkarpov15/kareem/commit/ba5f1bc))
+* feat: add option to check wrapped function return value for promises ([c9d7dd1](https://github.com/vkarpov15/kareem/commit/c9d7dd1))
+* refactor: use const in wrap() ([0fc21f9](https://github.com/vkarpov15/kareem/commit/0fc21f9))
+
+
+
+<a name="2.0.7"></a>
+## <small>2.0.7 (2018-04-28)</small>
+
+* chore: release 2.0.7 ([0bf91e6](https://github.com/vkarpov15/kareem/commit/0bf91e6))
+* feat: add `hasHooks()` ([225f18d](https://github.com/vkarpov15/kareem/commit/225f18d)), closes [Automattic/mongoose#6385](https://github.com/Automattic/mongoose/issues/6385)
+
+
+
+<a name="2.0.6"></a>
+## <small>2.0.6 (2018-03-22)</small>
+
+* chore: release 2.0.6 ([f3d406b](https://github.com/vkarpov15/kareem/commit/f3d406b))
+* fix(wrap): ensure fast path still wraps function in `nextTick()` for chaining ([7000494](https://github.com/vkarpov15/kareem/commit/7000494)), closes [Automattic/mongoose#6250](https://github.com/Automattic/mongoose/issues/6250) [dsanel/mongoose-delete#36](https://github.com/dsanel/mongoose-delete/issues/36)
+
+
+
+<a name="2.0.5"></a>
+## <small>2.0.5 (2018-02-22)</small>
+
+* chore: release 2.0.5 ([3286612](https://github.com/vkarpov15/kareem/commit/3286612))
+* perf(createWrapper): don't create wrapper if there are no hooks ([5afc5b9](https://github.com/vkarpov15/kareem/commit/5afc5b9)), closes [Automattic/mongoose#6126](https://github.com/Automattic/mongoose/issues/6126)
+
+
+
+<a name="2.0.4"></a>
+## <small>2.0.4 (2018-02-08)</small>
+
+* chore: release 2.0.4 ([2ab0293](https://github.com/vkarpov15/kareem/commit/2ab0293))
+
+
+
+<a name="2.0.3"></a>
+## <small>2.0.3 (2018-02-01)</small>
+
+* chore: release 2.0.3 ([3c1abe5](https://github.com/vkarpov15/kareem/commit/3c1abe5))
+* fix: use process.nextTick() re: Automattic/mongoose#6074 ([e5bfe33](https://github.com/vkarpov15/kareem/commit/e5bfe33)), closes [Automattic/mongoose#6074](https://github.com/Automattic/mongoose/issues/6074)
+
+
+
+<a name="2.0.2"></a>
+## <small>2.0.2 (2018-01-24)</small>
+
+* chore: fix license ([a9d755c](https://github.com/vkarpov15/kareem/commit/a9d755c)), closes [#10](https://github.com/vkarpov15/kareem/issues/10)
+* chore: release 2.0.2 ([fe87ab6](https://github.com/vkarpov15/kareem/commit/fe87ab6))
+
+
+
+<a name="2.0.1"></a>
+## <small>2.0.1 (2018-01-09)</small>
+
+* chore: release 2.0.1 with lockfile bump ([09c44fb](https://github.com/vkarpov15/kareem/commit/09c44fb))
+
+
+
+<a name="2.0.0"></a>
+## 2.0.0 (2018-01-09)
+
+* chore: bump marked re: security ([cc564a9](https://github.com/vkarpov15/kareem/commit/cc564a9))
+* chore: release 2.0.0 ([f511d1c](https://github.com/vkarpov15/kareem/commit/f511d1c))
+
+
+
+<a name="2.0.0-rc5"></a>
+## 2.0.0-rc5 (2017-12-23)
+
+* chore: fix build on node 4+5 ([6dac5a4](https://github.com/vkarpov15/kareem/commit/6dac5a4))
+* chore: fix built on node 4 + 5 again ([434ef0a](https://github.com/vkarpov15/kareem/commit/434ef0a))
+* chore: release 2.0.0-rc5 ([25a32ee](https://github.com/vkarpov15/kareem/commit/25a32ee))
+
+
+
+<a name="2.0.0-rc4"></a>
+## 2.0.0-rc4 (2017-12-22)
+
+* chore: release 2.0.0-rc4 ([49fc083](https://github.com/vkarpov15/kareem/commit/49fc083))
+* BREAKING CHANGE: deduplicate when merging hooks re: Automattic/mongoose#2945 ([d458573](https://github.com/vkarpov15/kareem/commit/d458573)), closes [Automattic/mongoose#2945](https://github.com/Automattic/mongoose/issues/2945)
+
+
+
+<a name="2.0.0-rc3"></a>
+## 2.0.0-rc3 (2017-12-22)
+
+* chore: release 2.0.0-rc3 ([adaaa00](https://github.com/vkarpov15/kareem/commit/adaaa00))
+* feat: support returning promises from middleware functions ([05b4480](https://github.com/vkarpov15/kareem/commit/05b4480)), closes [Automattic/mongoose#3779](https://github.com/Automattic/mongoose/issues/3779)
+
+
+
+<a name="2.0.0-rc2"></a>
+## 2.0.0-rc2 (2017-12-21)
+
+* chore: release 2.0.0-rc2 ([76325fa](https://github.com/vkarpov15/kareem/commit/76325fa))
+* fix: ensure next() and done() run in next tick ([6c20684](https://github.com/vkarpov15/kareem/commit/6c20684))
+
+
+
+<a name="2.0.0-rc1"></a>
+## 2.0.0-rc1 (2017-12-21)
+
+* chore: improve test coverage re: Automattic/mongoose#3232 ([7b45cf0](https://github.com/vkarpov15/kareem/commit/7b45cf0)), closes [Automattic/mongoose#3232](https://github.com/Automattic/mongoose/issues/3232)
+* chore: release 2.0.0-rc1 ([9b83f52](https://github.com/vkarpov15/kareem/commit/9b83f52))
+* BREAKING CHANGE: report sync exceptions as errors, only allow calling next() and done() once ([674adcc](https://github.com/vkarpov15/kareem/commit/674adcc)), closes [Automattic/mongoose#3483](https://github.com/Automattic/mongoose/issues/3483)
+
+
+
+<a name="2.0.0-rc0"></a>
+## 2.0.0-rc0 (2017-12-17)
+
+* chore: release 2.0.0-rc0 ([16b44b5](https://github.com/vkarpov15/kareem/commit/16b44b5))
+* BREAKING CHANGE: drop support for node < 4 ([9cbb8c7](https://github.com/vkarpov15/kareem/commit/9cbb8c7))
+* BREAKING CHANGE: remove useLegacyPost and add several new features ([6dd8531](https://github.com/vkarpov15/kareem/commit/6dd8531)), closes [Automattic/mongoose#3232](https://github.com/Automattic/mongoose/issues/3232)
+
+
+
+<a name="1.5.0"></a>
+## 1.5.0 (2017-07-20)
+
+* chore: release 1.5.0 ([9c491a0](https://github.com/vkarpov15/kareem/commit/9c491a0))
+* fix: improve post error handlers results ([9928dd5](https://github.com/vkarpov15/kareem/commit/9928dd5)), closes [Automattic/mongoose#5466](https://github.com/Automattic/mongoose/issues/5466)
+
+
+
+<a name="1.4.2"></a>
+## <small>1.4.2 (2017-07-06)</small>
+
+* chore: release 1.4.2 ([8d14ac5](https://github.com/vkarpov15/kareem/commit/8d14ac5))
+* fix: correct args re: Automattic/mongoose#5405 ([3f28ae6](https://github.com/vkarpov15/kareem/commit/3f28ae6)), closes [Automattic/mongoose#5405](https://github.com/Automattic/mongoose/issues/5405)
+
+
+
+<a name="1.4.1"></a>
+## <small>1.4.1 (2017-04-25)</small>
+
+* chore: release 1.4.1 ([5ecf0c2](https://github.com/vkarpov15/kareem/commit/5ecf0c2))
+* fix: handle numAsyncPres with clone() ([c72e857](https://github.com/vkarpov15/kareem/commit/c72e857)), closes [#8](https://github.com/vkarpov15/kareem/issues/8)
+* test: repro #8 ([9b4d6b2](https://github.com/vkarpov15/kareem/commit/9b4d6b2)), closes [#8](https://github.com/vkarpov15/kareem/issues/8)
+
+
+
+<a name="1.4.0"></a>
+## 1.4.0 (2017-04-19)
+
+* chore: release 1.4.0 ([101c5f5](https://github.com/vkarpov15/kareem/commit/101c5f5))
+* feat: add merge() function ([285325e](https://github.com/vkarpov15/kareem/commit/285325e))
+
+
+
+<a name="1.3.0"></a>
+## 1.3.0 (2017-03-26)
+
+* chore: release 1.3.0 ([f3a9e50](https://github.com/vkarpov15/kareem/commit/f3a9e50))
+* feat: pass function args to execPre ([4dd466d](https://github.com/vkarpov15/kareem/commit/4dd466d))
+
+
+
+<a name="1.2.1"></a>
+## <small>1.2.1 (2017-02-03)</small>
+
+* chore: release 1.2.1 ([d97081f](https://github.com/vkarpov15/kareem/commit/d97081f))
+* fix: filter out _kareemIgnored args for error handlers re: Automattic/mongoose#4925 ([ddc7aeb](https://github.com/vkarpov15/kareem/commit/ddc7aeb)), closes [Automattic/mongoose#4925](https://github.com/Automattic/mongoose/issues/4925)
+* fix: make error handlers handle errors in pre hooks ([af38033](https://github.com/vkarpov15/kareem/commit/af38033)), closes [Automattic/mongoose#4927](https://github.com/Automattic/mongoose/issues/4927)
+
+
+
+<a name="1.2.0"></a>
+## 1.2.0 (2017-01-02)
+
+* chore: release 1.2.0 ([033225c](https://github.com/vkarpov15/kareem/commit/033225c))
+* chore: upgrade deps ([f9e9a09](https://github.com/vkarpov15/kareem/commit/f9e9a09))
+* feat: add _kareemIgnore re: Automattic/mongoose#4836 ([7957771](https://github.com/vkarpov15/kareem/commit/7957771)), closes [Automattic/mongoose#4836](https://github.com/Automattic/mongoose/issues/4836)
+
+
+
+<a name="1.1.5"></a>
+## <small>1.1.5 (2016-12-13)</small>
+
+* chore: release 1.1.5 ([1a9f684](https://github.com/vkarpov15/kareem/commit/1a9f684))
+* fix: correct field name ([04a0e9d](https://github.com/vkarpov15/kareem/commit/04a0e9d))
+
+
+
+<a name="1.1.4"></a>
+## <small>1.1.4 (2016-12-09)</small>
+
+* chore: release 1.1.4 ([ece401c](https://github.com/vkarpov15/kareem/commit/ece401c))
+* chore: run tests on node 6 ([e0cb1cb](https://github.com/vkarpov15/kareem/commit/e0cb1cb))
+* fix: only copy own properties in clone() ([dfe28ce](https://github.com/vkarpov15/kareem/commit/dfe28ce)), closes [#7](https://github.com/vkarpov15/kareem/issues/7)
+
+
+
+<a name="1.1.3"></a>
+## <small>1.1.3 (2016-06-27)</small>
+
+* chore: release 1.1.3 ([87171c8](https://github.com/vkarpov15/kareem/commit/87171c8))
+* fix: couple more issues with arg processing ([c65f523](https://github.com/vkarpov15/kareem/commit/c65f523))
+
+
+
+<a name="1.1.2"></a>
+## <small>1.1.2 (2016-06-27)</small>
+
+* chore: release 1.1.2 ([8e102b6](https://github.com/vkarpov15/kareem/commit/8e102b6))
+* fix: add early return ([4feda4e](https://github.com/vkarpov15/kareem/commit/4feda4e))
+
+
+
+<a name="1.1.1"></a>
+## <small>1.1.1 (2016-06-27)</small>
+
+* chore: release 1.1.1 ([8bb3050](https://github.com/vkarpov15/kareem/commit/8bb3050))
+* fix: skip error handlers if no error ([0eb3a44](https://github.com/vkarpov15/kareem/commit/0eb3a44))
+
+
+
+<a name="1.1.0"></a>
+## 1.1.0 (2016-05-11)
+
+* chore: release 1.1.0 ([85332d9](https://github.com/vkarpov15/kareem/commit/85332d9))
+* chore: test on node 4 and node 5 ([1faefa1](https://github.com/vkarpov15/kareem/commit/1faefa1))
+* 100% coverage again ([c9aee4e](https://github.com/vkarpov15/kareem/commit/c9aee4e))
+* add support for error post hooks ([d378113](https://github.com/vkarpov15/kareem/commit/d378113))
+* basic setup for sync hooks #4 ([55aa081](https://github.com/vkarpov15/kareem/commit/55aa081)), closes [#4](https://github.com/vkarpov15/kareem/issues/4)
+* proof of concept for error handlers ([e4a07d9](https://github.com/vkarpov15/kareem/commit/e4a07d9))
+* refactor out handleWrapError helper ([b19af38](https://github.com/vkarpov15/kareem/commit/b19af38))
+
+
+
+<a name="1.0.1"></a>
+## <small>1.0.1 (2015-05-10)</small>
+
+* Fix #1 ([de60dc6](https://github.com/vkarpov15/kareem/commit/de60dc6)), closes [#1](https://github.com/vkarpov15/kareem/issues/1)
+* release 1.0.1 ([6971088](https://github.com/vkarpov15/kareem/commit/6971088))
+* Run tests on iojs in travis ([adcd201](https://github.com/vkarpov15/kareem/commit/adcd201))
+* support legacy post hook behavior in wrap() ([23fa74c](https://github.com/vkarpov15/kareem/commit/23fa74c))
+* Use node 0.12 in travis ([834689d](https://github.com/vkarpov15/kareem/commit/834689d))
+
+
+
+<a name="1.0.0"></a>
+## 1.0.0 (2015-01-28)
+
+* Tag 1.0.0 ([4c5a35a](https://github.com/vkarpov15/kareem/commit/4c5a35a))
+
+
+
+<a name="0.0.8"></a>
+## <small>0.0.8 (2015-01-27)</small>
+
+* Add clone function ([688bba7](https://github.com/vkarpov15/kareem/commit/688bba7))
+* Add jscs for style checking ([5c93149](https://github.com/vkarpov15/kareem/commit/5c93149))
+* Bump 0.0.8 ([03c0d2f](https://github.com/vkarpov15/kareem/commit/03c0d2f))
+* Fix jscs config, add gulp rules ([9989abf](https://github.com/vkarpov15/kareem/commit/9989abf))
+* fix Makefile typo ([1f7e61a](https://github.com/vkarpov15/kareem/commit/1f7e61a))
+
+
+
+<a name="0.0.7"></a>
+## <small>0.0.7 (2015-01-04)</small>
+
+* Bump 0.0.7 ([98ef173](https://github.com/vkarpov15/kareem/commit/98ef173))
+* fix LearnBoost/mongoose#2553 - use null instead of undefined for err ([9157b48](https://github.com/vkarpov15/kareem/commit/9157b48)), closes [LearnBoost/mongoose#2553](https://github.com/LearnBoost/mongoose/issues/2553)
+* Regenerate docs ([2331cdf](https://github.com/vkarpov15/kareem/commit/2331cdf))
+
+
+
+<a name="0.0.6"></a>
+## <small>0.0.6 (2015-01-01)</small>
+
+* Update docs and bump 0.0.6 ([92c12a7](https://github.com/vkarpov15/kareem/commit/92c12a7))
+
+
+
+<a name="0.0.5"></a>
+## <small>0.0.5 (2015-01-01)</small>
+
+* Add coverage rule to Makefile ([825a91c](https://github.com/vkarpov15/kareem/commit/825a91c))
+* Add coveralls to README ([fb52369](https://github.com/vkarpov15/kareem/commit/fb52369))
+* Add coveralls to travis ([93f6f15](https://github.com/vkarpov15/kareem/commit/93f6f15))
+* Add createWrapper() function ([ea77741](https://github.com/vkarpov15/kareem/commit/ea77741))
+* Add istanbul code coverage ([6eceeef](https://github.com/vkarpov15/kareem/commit/6eceeef))
+* Add some more comments for examples ([c5b0c6f](https://github.com/vkarpov15/kareem/commit/c5b0c6f))
+* Add travis ([e6dcb06](https://github.com/vkarpov15/kareem/commit/e6dcb06))
+* Add travis badge to docs ([ad8c9b3](https://github.com/vkarpov15/kareem/commit/ad8c9b3))
+* Add wrap() tests, 100% coverage ([6945be4](https://github.com/vkarpov15/kareem/commit/6945be4))
+* Better test coverage for execPost ([d9ad539](https://github.com/vkarpov15/kareem/commit/d9ad539))
+* Bump 0.0.5 ([69875b1](https://github.com/vkarpov15/kareem/commit/69875b1))
+* Docs fix ([15b7098](https://github.com/vkarpov15/kareem/commit/15b7098))
+* Fix silly mistake in docs generation ([50373eb](https://github.com/vkarpov15/kareem/commit/50373eb))
+* Fix typo in readme ([fec4925](https://github.com/vkarpov15/kareem/commit/fec4925))
+* Linkify travis badge ([92b25fe](https://github.com/vkarpov15/kareem/commit/92b25fe))
+* Make travis run coverage ([747157b](https://github.com/vkarpov15/kareem/commit/747157b))
+* Move travis status badge ([d52e89b](https://github.com/vkarpov15/kareem/commit/d52e89b))
+* Quick fix for coverage ([50bbddb](https://github.com/vkarpov15/kareem/commit/50bbddb))
+* Typo fix ([adea794](https://github.com/vkarpov15/kareem/commit/adea794))
+
+
+
+<a name="0.0.4"></a>
+## <small>0.0.4 (2014-12-13)</small>
+
+* Bump 0.0.4, run docs generation ([51a15fe](https://github.com/vkarpov15/kareem/commit/51a15fe))
+* Use correct post parameters in wrap() ([9bb5da3](https://github.com/vkarpov15/kareem/commit/9bb5da3))
+
+
+
+<a name="0.0.3"></a>
+## <small>0.0.3 (2014-12-12)</small>
+
+* Add npm test script, fix small bug with args not getting passed through post ([49e3e68](https://github.com/vkarpov15/kareem/commit/49e3e68))
+* Bump 0.0.3 ([65621d8](https://github.com/vkarpov15/kareem/commit/65621d8))
+* Update readme ([901388b](https://github.com/vkarpov15/kareem/commit/901388b))
+
+
+
+<a name="0.0.2"></a>
+## <small>0.0.2 (2014-12-12)</small>
+
+* Add github repo and bump 0.0.2 ([59db8be](https://github.com/vkarpov15/kareem/commit/59db8be))
+
+
+
+<a name="0.0.1"></a>
+## <small>0.0.1 (2014-12-12)</small>
+
+* Add basic docs ([ad29ea4](https://github.com/vkarpov15/kareem/commit/ad29ea4))
+* Add pre hooks ([2ffc356](https://github.com/vkarpov15/kareem/commit/2ffc356))
+* Add wrap function ([68c540c](https://github.com/vkarpov15/kareem/commit/68c540c))
+* Bump to version 0.0.1 ([a4bfd68](https://github.com/vkarpov15/kareem/commit/a4bfd68))
+* Initial commit ([4002458](https://github.com/vkarpov15/kareem/commit/4002458))
+* Initial deposit ([98fc489](https://github.com/vkarpov15/kareem/commit/98fc489))
+* Post hooks ([395b67c](https://github.com/vkarpov15/kareem/commit/395b67c))
+* Some basic setup work ([82df75e](https://github.com/vkarpov15/kareem/commit/82df75e))
+* Support sync pre hooks ([1cc1b9f](https://github.com/vkarpov15/kareem/commit/1cc1b9f))
+* Update package.json description ([978da18](https://github.com/vkarpov15/kareem/commit/978da18))
+
+
+
+<a name="2.2.5"></a>
+## <small>2.2.5 (2018-09-24)</small>
+
+
+
+
+<a name="2.2.4"></a>
+## <small>2.2.4 (2018-09-24)</small>
+
+
+
+
+<a name="2.2.3"></a>
+## <small>2.2.3 (2018-09-24)</small>
+
+* fix(filter): copy async pres correctly with `filter()` ([1b1ed8a](https://github.com/vkarpov15/kareem/commit/1b1ed8a)), closes [Automattic/mongoose#3054](https://github.com/Automattic/mongoose/issues/3054)
+* feat: add filter() function ([1f641f4](https://github.com/vkarpov15/kareem/commit/1f641f4))
+* feat: support storing options on pre and post hooks ([59220b9](https://github.com/vkarpov15/kareem/commit/59220b9))
+
+
+
+<a name="2.2.3"></a>
+## <small>2.2.3 (2018-09-10)</small>
+
+* chore: release 2.2.3 ([af653a3](https://github.com/vkarpov15/kareem/commit/af653a3))
+
+
+
+<a name="2.2.2"></a>
+## <small>2.2.2 (2018-09-10)</small>
+
+* chore: release 2.2.2 ([3f0144d](https://github.com/vkarpov15/kareem/commit/3f0144d))
+* fix: allow merge() to not clone ([e628d65](https://github.com/vkarpov15/kareem/commit/e628d65))
+
+
+
+<a name="2.2.1"></a>
+## <small>2.2.1 (2018-06-05)</small>
+
+* chore: release 2.2.1 ([4625a64](https://github.com/vkarpov15/kareem/commit/4625a64))
+* chore: remove lockfile from git ([7f3e4e6](https://github.com/vkarpov15/kareem/commit/7f3e4e6))
+* fix: handle numAsync correctly when merging ([fef8e7e](https://github.com/vkarpov15/kareem/commit/fef8e7e))
+* test: repro issue with not copying numAsync ([952d9db](https://github.com/vkarpov15/kareem/commit/952d9db))
+
+
+
+<a name="2.2.0"></a>
+## 2.2.0 (2018-06-05)
+
+* chore: release 2.2.0 ([ff9ad03](https://github.com/vkarpov15/kareem/commit/ff9ad03))
+* fix: use maps instead of objects for _pres and _posts so `toString()` doesn't get reported as having ([55df303](https://github.com/vkarpov15/kareem/commit/55df303)), closes [Automattic/mongoose#6538](https://github.com/Automattic/mongoose/issues/6538)
+
+
+
+<a name="2.1.0"></a>
+## 2.1.0 (2018-05-16)
+
+* chore: release 2.1.0 ([ba5f1bc](https://github.com/vkarpov15/kareem/commit/ba5f1bc))
+* feat: add option to check wrapped function return value for promises ([c9d7dd1](https://github.com/vkarpov15/kareem/commit/c9d7dd1))
+* refactor: use const in wrap() ([0fc21f9](https://github.com/vkarpov15/kareem/commit/0fc21f9))
+
+
+
+<a name="2.0.7"></a>
+## <small>2.0.7 (2018-04-28)</small>
+
+* chore: release 2.0.7 ([0bf91e6](https://github.com/vkarpov15/kareem/commit/0bf91e6))
+* feat: add `hasHooks()` ([225f18d](https://github.com/vkarpov15/kareem/commit/225f18d)), closes [Automattic/mongoose#6385](https://github.com/Automattic/mongoose/issues/6385)
+
+
+
+<a name="2.0.6"></a>
+## <small>2.0.6 (2018-03-22)</small>
+
+* chore: release 2.0.6 ([f3d406b](https://github.com/vkarpov15/kareem/commit/f3d406b))
+* fix(wrap): ensure fast path still wraps function in `nextTick()` for chaining ([7000494](https://github.com/vkarpov15/kareem/commit/7000494)), closes [Automattic/mongoose#6250](https://github.com/Automattic/mongoose/issues/6250) [dsanel/mongoose-delete#36](https://github.com/dsanel/mongoose-delete/issues/36)
+
+
+
+<a name="2.0.5"></a>
+## <small>2.0.5 (2018-02-22)</small>
+
+* chore: release 2.0.5 ([3286612](https://github.com/vkarpov15/kareem/commit/3286612))
+* perf(createWrapper): don't create wrapper if there are no hooks ([5afc5b9](https://github.com/vkarpov15/kareem/commit/5afc5b9)), closes [Automattic/mongoose#6126](https://github.com/Automattic/mongoose/issues/6126)
+
+
+
+<a name="2.0.4"></a>
+## <small>2.0.4 (2018-02-08)</small>
+
+* chore: release 2.0.4 ([2ab0293](https://github.com/vkarpov15/kareem/commit/2ab0293))
+
+
+
+<a name="2.0.3"></a>
+## <small>2.0.3 (2018-02-01)</small>
+
+* chore: release 2.0.3 ([3c1abe5](https://github.com/vkarpov15/kareem/commit/3c1abe5))
+* fix: use process.nextTick() re: Automattic/mongoose#6074 ([e5bfe33](https://github.com/vkarpov15/kareem/commit/e5bfe33)), closes [Automattic/mongoose#6074](https://github.com/Automattic/mongoose/issues/6074)
+
+
+
+<a name="2.0.2"></a>
+## <small>2.0.2 (2018-01-24)</small>
+
+* chore: fix license ([a9d755c](https://github.com/vkarpov15/kareem/commit/a9d755c)), closes [#10](https://github.com/vkarpov15/kareem/issues/10)
+* chore: release 2.0.2 ([fe87ab6](https://github.com/vkarpov15/kareem/commit/fe87ab6))
+
+
+
+<a name="2.0.1"></a>
+## <small>2.0.1 (2018-01-09)</small>
+
+* chore: release 2.0.1 with lockfile bump ([09c44fb](https://github.com/vkarpov15/kareem/commit/09c44fb))
+
+
+
+<a name="2.0.0"></a>
+## 2.0.0 (2018-01-09)
+
+* chore: bump marked re: security ([cc564a9](https://github.com/vkarpov15/kareem/commit/cc564a9))
+* chore: release 2.0.0 ([f511d1c](https://github.com/vkarpov15/kareem/commit/f511d1c))
+
+
+
+<a name="2.0.0-rc5"></a>
+## 2.0.0-rc5 (2017-12-23)
+
+* chore: fix build on node 4+5 ([6dac5a4](https://github.com/vkarpov15/kareem/commit/6dac5a4))
+* chore: fix built on node 4 + 5 again ([434ef0a](https://github.com/vkarpov15/kareem/commit/434ef0a))
+* chore: release 2.0.0-rc5 ([25a32ee](https://github.com/vkarpov15/kareem/commit/25a32ee))
+
+
+
+<a name="2.0.0-rc4"></a>
+## 2.0.0-rc4 (2017-12-22)
+
+* chore: release 2.0.0-rc4 ([49fc083](https://github.com/vkarpov15/kareem/commit/49fc083))
+* BREAKING CHANGE: deduplicate when merging hooks re: Automattic/mongoose#2945 ([d458573](https://github.com/vkarpov15/kareem/commit/d458573)), closes [Automattic/mongoose#2945](https://github.com/Automattic/mongoose/issues/2945)
+
+
+
+<a name="2.0.0-rc3"></a>
+## 2.0.0-rc3 (2017-12-22)
+
+* chore: release 2.0.0-rc3 ([adaaa00](https://github.com/vkarpov15/kareem/commit/adaaa00))
+* feat: support returning promises from middleware functions ([05b4480](https://github.com/vkarpov15/kareem/commit/05b4480)), closes [Automattic/mongoose#3779](https://github.com/Automattic/mongoose/issues/3779)
+
+
+
+<a name="2.0.0-rc2"></a>
+## 2.0.0-rc2 (2017-12-21)
+
+* chore: release 2.0.0-rc2 ([76325fa](https://github.com/vkarpov15/kareem/commit/76325fa))
+* fix: ensure next() and done() run in next tick ([6c20684](https://github.com/vkarpov15/kareem/commit/6c20684))
+
+
+
+<a name="2.0.0-rc1"></a>
+## 2.0.0-rc1 (2017-12-21)
+
+* chore: improve test coverage re: Automattic/mongoose#3232 ([7b45cf0](https://github.com/vkarpov15/kareem/commit/7b45cf0)), closes [Automattic/mongoose#3232](https://github.com/Automattic/mongoose/issues/3232)
+* chore: release 2.0.0-rc1 ([9b83f52](https://github.com/vkarpov15/kareem/commit/9b83f52))
+* BREAKING CHANGE: report sync exceptions as errors, only allow calling next() and done() once ([674adcc](https://github.com/vkarpov15/kareem/commit/674adcc)), closes [Automattic/mongoose#3483](https://github.com/Automattic/mongoose/issues/3483)
+
+
+
+<a name="2.0.0-rc0"></a>
+## 2.0.0-rc0 (2017-12-17)
+
+* chore: release 2.0.0-rc0 ([16b44b5](https://github.com/vkarpov15/kareem/commit/16b44b5))
+* BREAKING CHANGE: drop support for node < 4 ([9cbb8c7](https://github.com/vkarpov15/kareem/commit/9cbb8c7))
+* BREAKING CHANGE: remove useLegacyPost and add several new features ([6dd8531](https://github.com/vkarpov15/kareem/commit/6dd8531)), closes [Automattic/mongoose#3232](https://github.com/Automattic/mongoose/issues/3232)
+
+
+
+<a name="1.5.0"></a>
+## 1.5.0 (2017-07-20)
+
+* chore: release 1.5.0 ([9c491a0](https://github.com/vkarpov15/kareem/commit/9c491a0))
+* fix: improve post error handlers results ([9928dd5](https://github.com/vkarpov15/kareem/commit/9928dd5)), closes [Automattic/mongoose#5466](https://github.com/Automattic/mongoose/issues/5466)
+
+
+
+<a name="1.4.2"></a>
+## <small>1.4.2 (2017-07-06)</small>
+
+* chore: release 1.4.2 ([8d14ac5](https://github.com/vkarpov15/kareem/commit/8d14ac5))
+* fix: correct args re: Automattic/mongoose#5405 ([3f28ae6](https://github.com/vkarpov15/kareem/commit/3f28ae6)), closes [Automattic/mongoose#5405](https://github.com/Automattic/mongoose/issues/5405)
+
+
+
+<a name="1.4.1"></a>
+## <small>1.4.1 (2017-04-25)</small>
+
+* chore: release 1.4.1 ([5ecf0c2](https://github.com/vkarpov15/kareem/commit/5ecf0c2))
+* fix: handle numAsyncPres with clone() ([c72e857](https://github.com/vkarpov15/kareem/commit/c72e857)), closes [#8](https://github.com/vkarpov15/kareem/issues/8)
+* test: repro #8 ([9b4d6b2](https://github.com/vkarpov15/kareem/commit/9b4d6b2)), closes [#8](https://github.com/vkarpov15/kareem/issues/8)
+
+
+
+<a name="1.4.0"></a>
+## 1.4.0 (2017-04-19)
+
+* chore: release 1.4.0 ([101c5f5](https://github.com/vkarpov15/kareem/commit/101c5f5))
+* feat: add merge() function ([285325e](https://github.com/vkarpov15/kareem/commit/285325e))
+
+
+
+<a name="1.3.0"></a>
+## 1.3.0 (2017-03-26)
+
+* chore: release 1.3.0 ([f3a9e50](https://github.com/vkarpov15/kareem/commit/f3a9e50))
+* feat: pass function args to execPre ([4dd466d](https://github.com/vkarpov15/kareem/commit/4dd466d))
+
+
+
+<a name="1.2.1"></a>
+## <small>1.2.1 (2017-02-03)</small>
+
+* chore: release 1.2.1 ([d97081f](https://github.com/vkarpov15/kareem/commit/d97081f))
+* fix: filter out _kareemIgnored args for error handlers re: Automattic/mongoose#4925 ([ddc7aeb](https://github.com/vkarpov15/kareem/commit/ddc7aeb)), closes [Automattic/mongoose#4925](https://github.com/Automattic/mongoose/issues/4925)
+* fix: make error handlers handle errors in pre hooks ([af38033](https://github.com/vkarpov15/kareem/commit/af38033)), closes [Automattic/mongoose#4927](https://github.com/Automattic/mongoose/issues/4927)
+
+
+
+<a name="1.2.0"></a>
+## 1.2.0 (2017-01-02)
+
+* chore: release 1.2.0 ([033225c](https://github.com/vkarpov15/kareem/commit/033225c))
+* chore: upgrade deps ([f9e9a09](https://github.com/vkarpov15/kareem/commit/f9e9a09))
+* feat: add _kareemIgnore re: Automattic/mongoose#4836 ([7957771](https://github.com/vkarpov15/kareem/commit/7957771)), closes [Automattic/mongoose#4836](https://github.com/Automattic/mongoose/issues/4836)
+
+
+
+<a name="1.1.5"></a>
+## <small>1.1.5 (2016-12-13)</small>
+
+* chore: release 1.1.5 ([1a9f684](https://github.com/vkarpov15/kareem/commit/1a9f684))
+* fix: correct field name ([04a0e9d](https://github.com/vkarpov15/kareem/commit/04a0e9d))
+
+
+
+<a name="1.1.4"></a>
+## <small>1.1.4 (2016-12-09)</small>
+
+* chore: release 1.1.4 ([ece401c](https://github.com/vkarpov15/kareem/commit/ece401c))
+* chore: run tests on node 6 ([e0cb1cb](https://github.com/vkarpov15/kareem/commit/e0cb1cb))
+* fix: only copy own properties in clone() ([dfe28ce](https://github.com/vkarpov15/kareem/commit/dfe28ce)), closes [#7](https://github.com/vkarpov15/kareem/issues/7)
+
+
+
+<a name="1.1.3"></a>
+## <small>1.1.3 (2016-06-27)</small>
+
+* chore: release 1.1.3 ([87171c8](https://github.com/vkarpov15/kareem/commit/87171c8))
+* fix: couple more issues with arg processing ([c65f523](https://github.com/vkarpov15/kareem/commit/c65f523))
+
+
+
+<a name="1.1.2"></a>
+## <small>1.1.2 (2016-06-27)</small>
+
+* chore: release 1.1.2 ([8e102b6](https://github.com/vkarpov15/kareem/commit/8e102b6))
+* fix: add early return ([4feda4e](https://github.com/vkarpov15/kareem/commit/4feda4e))
+
+
+
+<a name="1.1.1"></a>
+## <small>1.1.1 (2016-06-27)</small>
+
+* chore: release 1.1.1 ([8bb3050](https://github.com/vkarpov15/kareem/commit/8bb3050))
+* fix: skip error handlers if no error ([0eb3a44](https://github.com/vkarpov15/kareem/commit/0eb3a44))
+
+
+
+<a name="1.1.0"></a>
+## 1.1.0 (2016-05-11)
+
+* chore: release 1.1.0 ([85332d9](https://github.com/vkarpov15/kareem/commit/85332d9))
+* chore: test on node 4 and node 5 ([1faefa1](https://github.com/vkarpov15/kareem/commit/1faefa1))
+* 100% coverage again ([c9aee4e](https://github.com/vkarpov15/kareem/commit/c9aee4e))
+* add support for error post hooks ([d378113](https://github.com/vkarpov15/kareem/commit/d378113))
+* basic setup for sync hooks #4 ([55aa081](https://github.com/vkarpov15/kareem/commit/55aa081)), closes [#4](https://github.com/vkarpov15/kareem/issues/4)
+* proof of concept for error handlers ([e4a07d9](https://github.com/vkarpov15/kareem/commit/e4a07d9))
+* refactor out handleWrapError helper ([b19af38](https://github.com/vkarpov15/kareem/commit/b19af38))
+
+
+
+<a name="1.0.1"></a>
+## <small>1.0.1 (2015-05-10)</small>
+
+* Fix #1 ([de60dc6](https://github.com/vkarpov15/kareem/commit/de60dc6)), closes [#1](https://github.com/vkarpov15/kareem/issues/1)
+* release 1.0.1 ([6971088](https://github.com/vkarpov15/kareem/commit/6971088))
+* Run tests on iojs in travis ([adcd201](https://github.com/vkarpov15/kareem/commit/adcd201))
+* support legacy post hook behavior in wrap() ([23fa74c](https://github.com/vkarpov15/kareem/commit/23fa74c))
+* Use node 0.12 in travis ([834689d](https://github.com/vkarpov15/kareem/commit/834689d))
+
+
+
+<a name="1.0.0"></a>
+## 1.0.0 (2015-01-28)
+
+* Tag 1.0.0 ([4c5a35a](https://github.com/vkarpov15/kareem/commit/4c5a35a))
+
+
+
+<a name="0.0.8"></a>
+## <small>0.0.8 (2015-01-27)</small>
+
+* Add clone function ([688bba7](https://github.com/vkarpov15/kareem/commit/688bba7))
+* Add jscs for style checking ([5c93149](https://github.com/vkarpov15/kareem/commit/5c93149))
+* Bump 0.0.8 ([03c0d2f](https://github.com/vkarpov15/kareem/commit/03c0d2f))
+* Fix jscs config, add gulp rules ([9989abf](https://github.com/vkarpov15/kareem/commit/9989abf))
+* fix Makefile typo ([1f7e61a](https://github.com/vkarpov15/kareem/commit/1f7e61a))
+
+
+
+<a name="0.0.7"></a>
+## <small>0.0.7 (2015-01-04)</small>
+
+* Bump 0.0.7 ([98ef173](https://github.com/vkarpov15/kareem/commit/98ef173))
+* fix LearnBoost/mongoose#2553 - use null instead of undefined for err ([9157b48](https://github.com/vkarpov15/kareem/commit/9157b48)), closes [LearnBoost/mongoose#2553](https://github.com/LearnBoost/mongoose/issues/2553)
+* Regenerate docs ([2331cdf](https://github.com/vkarpov15/kareem/commit/2331cdf))
+
+
+
+<a name="0.0.6"></a>
+## <small>0.0.6 (2015-01-01)</small>
+
+* Update docs and bump 0.0.6 ([92c12a7](https://github.com/vkarpov15/kareem/commit/92c12a7))
+
+
+
+<a name="0.0.5"></a>
+## <small>0.0.5 (2015-01-01)</small>
+
+* Add coverage rule to Makefile ([825a91c](https://github.com/vkarpov15/kareem/commit/825a91c))
+* Add coveralls to README ([fb52369](https://github.com/vkarpov15/kareem/commit/fb52369))
+* Add coveralls to travis ([93f6f15](https://github.com/vkarpov15/kareem/commit/93f6f15))
+* Add createWrapper() function ([ea77741](https://github.com/vkarpov15/kareem/commit/ea77741))
+* Add istanbul code coverage ([6eceeef](https://github.com/vkarpov15/kareem/commit/6eceeef))
+* Add some more comments for examples ([c5b0c6f](https://github.com/vkarpov15/kareem/commit/c5b0c6f))
+* Add travis ([e6dcb06](https://github.com/vkarpov15/kareem/commit/e6dcb06))
+* Add travis badge to docs ([ad8c9b3](https://github.com/vkarpov15/kareem/commit/ad8c9b3))
+* Add wrap() tests, 100% coverage ([6945be4](https://github.com/vkarpov15/kareem/commit/6945be4))
+* Better test coverage for execPost ([d9ad539](https://github.com/vkarpov15/kareem/commit/d9ad539))
+* Bump 0.0.5 ([69875b1](https://github.com/vkarpov15/kareem/commit/69875b1))
+* Docs fix ([15b7098](https://github.com/vkarpov15/kareem/commit/15b7098))
+* Fix silly mistake in docs generation ([50373eb](https://github.com/vkarpov15/kareem/commit/50373eb))
+* Fix typo in readme ([fec4925](https://github.com/vkarpov15/kareem/commit/fec4925))
+* Linkify travis badge ([92b25fe](https://github.com/vkarpov15/kareem/commit/92b25fe))
+* Make travis run coverage ([747157b](https://github.com/vkarpov15/kareem/commit/747157b))
+* Move travis status badge ([d52e89b](https://github.com/vkarpov15/kareem/commit/d52e89b))
+* Quick fix for coverage ([50bbddb](https://github.com/vkarpov15/kareem/commit/50bbddb))
+* Typo fix ([adea794](https://github.com/vkarpov15/kareem/commit/adea794))
+
+
+
+<a name="0.0.4"></a>
+## <small>0.0.4 (2014-12-13)</small>
+
+* Bump 0.0.4, run docs generation ([51a15fe](https://github.com/vkarpov15/kareem/commit/51a15fe))
+* Use correct post parameters in wrap() ([9bb5da3](https://github.com/vkarpov15/kareem/commit/9bb5da3))
+
+
+
+<a name="0.0.3"></a>
+## <small>0.0.3 (2014-12-12)</small>
+
+* Add npm test script, fix small bug with args not getting passed through post ([49e3e68](https://github.com/vkarpov15/kareem/commit/49e3e68))
+* Bump 0.0.3 ([65621d8](https://github.com/vkarpov15/kareem/commit/65621d8))
+* Update readme ([901388b](https://github.com/vkarpov15/kareem/commit/901388b))
+
+
+
+<a name="0.0.2"></a>
+## <small>0.0.2 (2014-12-12)</small>
+
+* Add github repo and bump 0.0.2 ([59db8be](https://github.com/vkarpov15/kareem/commit/59db8be))
+
+
+
+<a name="0.0.1"></a>
+## <small>0.0.1 (2014-12-12)</small>
+
+* Add basic docs ([ad29ea4](https://github.com/vkarpov15/kareem/commit/ad29ea4))
+* Add pre hooks ([2ffc356](https://github.com/vkarpov15/kareem/commit/2ffc356))
+* Add wrap function ([68c540c](https://github.com/vkarpov15/kareem/commit/68c540c))
+* Bump to version 0.0.1 ([a4bfd68](https://github.com/vkarpov15/kareem/commit/a4bfd68))
+* Initial commit ([4002458](https://github.com/vkarpov15/kareem/commit/4002458))
+* Initial deposit ([98fc489](https://github.com/vkarpov15/kareem/commit/98fc489))
+* Post hooks ([395b67c](https://github.com/vkarpov15/kareem/commit/395b67c))
+* Some basic setup work ([82df75e](https://github.com/vkarpov15/kareem/commit/82df75e))
+* Support sync pre hooks ([1cc1b9f](https://github.com/vkarpov15/kareem/commit/1cc1b9f))
+* Update package.json description ([978da18](https://github.com/vkarpov15/kareem/commit/978da18))

@@ -1,992 +1,443 @@
-"use strict";
-module.exports = parse;
+var BigNumber = null;
 
-parse.filename = null;
-parse.defaults = { keepCase: false };
+// regexpxs extracted from
+// (c) BSD-3-Clause
+// https://github.com/fastify/secure-json-parse/graphs/contributors and https://github.com/hapijs/bourne/graphs/contributors
 
-var tokenize  = require("./tokenize"),
-    Root      = require("./root"),
-    Type      = require("./type"),
-    Field     = require("./field"),
-    MapField  = require("./mapfield"),
-    OneOf     = require("./oneof"),
-    Enum      = require("./enum"),
-    Service   = require("./service"),
-    Method    = require("./method"),
-    ReflectionObject = require("./object"),
-    types     = require("./types"),
-    util      = require("./util");
+const suspectProtoRx = /(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u0072)(?:o|\\u006[Ff])(?:t|\\u0074)(?:o|\\u006[Ff])(?:_|\\u005[Ff])(?:_|\\u005[Ff])/;
+const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)/;
 
-var base10Re    = /^[1-9][0-9]*$/,
-    base10NegRe = /^-?[1-9][0-9]*$/,
-    base16Re    = /^0[x][0-9a-fA-F]+$/,
-    base16NegRe = /^-?0[x][0-9a-fA-F]+$/,
-    base8Re     = /^0[0-7]+$/,
-    base8NegRe  = /^-?0[0-7]+$/,
-    numberRe    = util.patterns.numberRe,
-    nameRe      = /^[a-zA-Z_][a-zA-Z_0-9]*$/,
-    typeRefRe   = util.patterns.typeRefRe;
+/*
+    json_parse.js
+    2012-06-20
 
-/**
- * Result object returned from {@link parse}.
- * @interface IParserResult
- * @property {string|undefined} package Package name, if declared
- * @property {string[]|undefined} imports Imports, if any
- * @property {string[]|undefined} weakImports Weak imports, if any
- * @property {Root} root Populated root instance
- */
+    Public Domain.
 
-/**
- * Options modifying the behavior of {@link parse}.
- * @interface IParseOptions
- * @property {boolean} [keepCase=false] Keeps field casing instead of converting to camel case
- * @property {boolean} [alternateCommentMode=false] Recognize double-slash comments in addition to doc-block comments.
- * @property {boolean} [preferTrailingComment=false] Use trailing comment when both leading comment and trailing comment exist.
- */
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
-/**
- * Options modifying the behavior of JSON serialization.
- * @interface IToJSONOptions
- * @property {boolean} [keepComments=false] Serializes comments.
- */
+    This file creates a json_parse function.
+    During create you can (optionally) specify some behavioural switches
 
-/**
- * Parses the given .proto source and returns an object with the parsed contents.
- * @param {string} source Source contents
- * @param {Root} root Root to populate
- * @param {IParseOptions} [options] Parse options. Defaults to {@link parse.defaults} when omitted.
- * @returns {IParserResult} Parser result
- * @property {string} filename=null Currently processing file name for error reporting, if known
- * @property {IParseOptions} defaults Default {@link IParseOptions}
- */
-function parse(source, root, options) {
-    /* eslint-disable callback-return */
-    if (!(root instanceof Root)) {
-        options = root;
-        root = new Root();
-    }
-    if (!options)
-        options = parse.defaults;
+        require('json-bigint')(options)
 
-    var preferTrailingComment = options.preferTrailingComment || false;
-    var tn = tokenize(source, options.alternateCommentMode || false),
-        next = tn.next,
-        push = tn.push,
-        peek = tn.peek,
-        skip = tn.skip,
-        cmnt = tn.cmnt;
+            The optional options parameter holds switches that drive certain
+            aspects of the parsing process:
+            * options.strict = true will warn about duplicate-key usage in the json.
+              The default (strict = false) will silently ignore those and overwrite
+              values for keys that are in duplicate use.
 
-    var head = true,
-        pkg,
-        imports,
-        weakImports,
-        edition = "proto2";
+    The resulting function follows this signature:
+        json_parse(text, reviver)
+            This method parses a JSON text to produce an object or array.
+            It can throw a SyntaxError exception.
 
-    var ptr = root;
+            The optional reviver parameter is a function that can filter and
+            transform the results. It receives each of the keys and values,
+            and its return value is used instead of the original value.
+            If it returns what it received, then the structure is not modified.
+            If it returns undefined then the member is deleted.
 
-    var topLevelObjects = [];
-    var topLevelOptions = {};
+            Example:
 
-    var applyCase = options.keepCase ? function(name) { return name; } : util.camelCase;
+            // Parse the text. Values that look like ISO date strings will
+            // be converted to Date objects.
 
-    function resolveFileFeatures() {
-        topLevelObjects.forEach(obj => {
-            obj._edition = edition;
-            Object.keys(topLevelOptions).forEach(opt => {
-                if (obj.getOption(opt) !== undefined) return;
-                obj.setOption(opt, topLevelOptions[opt], true);
-            });
-        });
-    }
-
-    /* istanbul ignore next */
-    function illegal(token, name, insideTryCatch) {
-        var filename = parse.filename;
-        if (!insideTryCatch)
-            parse.filename = null;
-        return Error("illegal " + (name || "token") + " '" + token + "' (" + (filename ? filename + ", " : "") + "line " + tn.line + ")");
-    }
-
-    function readString() {
-        var values = [],
-            token;
-        do {
-            /* istanbul ignore if */
-            if ((token = next()) !== "\"" && token !== "'")
-                throw illegal(token);
-
-            values.push(next());
-            skip(token);
-            token = peek();
-        } while (token === "\"" || token === "'");
-        return values.join("");
-    }
-
-    function readValue(acceptTypeRef) {
-        var token = next();
-        switch (token) {
-            case "'":
-            case "\"":
-                push(token);
-                return readString();
-            case "true": case "TRUE":
-                return true;
-            case "false": case "FALSE":
-                return false;
-        }
-        try {
-            return parseNumber(token, /* insideTryCatch */ true);
-        } catch (e) {
-            /* istanbul ignore else */
-            if (acceptTypeRef && typeRefRe.test(token))
-                return token;
-
-            /* istanbul ignore next */
-            throw illegal(token, "value");
-        }
-    }
-
-    function readRanges(target, acceptStrings) {
-        var token, start;
-        do {
-            if (acceptStrings && ((token = peek()) === "\"" || token === "'")) {
-                var str = readString();
-                target.push(str);
-                if (edition >= 2023) {
-                    throw illegal(str, "id");
-                }
-            } else {
-                try {
-                    target.push([ start = parseId(next()), skip("to", true) ? parseId(next()) : start ]);
-                } catch (err) {
-                    if (acceptStrings && typeRefRe.test(token) && edition >= 2023) {
-                        target.push(token);
-                    } else {
-                        throw err;
+            myData = json_parse(text, function (key, value) {
+                var a;
+                if (typeof value === 'string') {
+                    a =
+/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+                    if (a) {
+                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
+                            +a[5], +a[6]));
                     }
                 }
-            }
-        } while (skip(",", true));
-        var dummy = {options: undefined};
-        dummy.setOption = function(name, value) {
-          if (this.options === undefined) this.options = {};
-          this.options[name] = value;
-        };
-        ifBlock(
-            dummy,
-            function parseRange_block(token) {
-              /* istanbul ignore else */
-              if (token === "option") {
-                parseOption(dummy, token);  // skip
-                skip(";");
-              } else
-                throw illegal(token);
-            },
-            function parseRange_line() {
-              parseInlineOptions(dummy);  // skip
+                return value;
             });
+
+    This is a reference implementation. You are free to copy, modify, or
+    redistribute.
+
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+*/
+
+/*members "", "\"", "\/", "\\", at, b, call, charAt, f, fromCharCode,
+    hasOwnProperty, message, n, name, prototype, push, r, t, text
+*/
+
+var json_parse = function (options) {
+  'use strict';
+
+  // This is a function that can parse a JSON text, producing a JavaScript
+  // data structure. It is a simple, recursive descent parser. It does not use
+  // eval or regular expressions, so it can be used as a model for implementing
+  // a JSON parser in other languages.
+
+  // We are defining the function inside of another function to avoid creating
+  // global variables.
+
+  // Default options one can override by passing options to the parse()
+  var _options = {
+    strict: false, // not being strict means do not generate syntax errors for "duplicate key"
+    storeAsString: false, // toggles whether the values should be stored as BigNumber (default) or a string
+    alwaysParseAsBig: false, // toggles whether all numbers should be Big
+    useNativeBigInt: false, // toggles whether to use native BigInt instead of bignumber.js
+    protoAction: 'error',
+    constructorAction: 'error',
+  };
+
+  // If there are options, then use them to override the default _options
+  if (options !== undefined && options !== null) {
+    if (options.strict === true) {
+      _options.strict = true;
+    }
+    if (options.storeAsString === true) {
+      _options.storeAsString = true;
+    }
+    _options.alwaysParseAsBig =
+      options.alwaysParseAsBig === true ? options.alwaysParseAsBig : false;
+    _options.useNativeBigInt =
+      options.useNativeBigInt === true ? options.useNativeBigInt : false;
+
+    if (typeof options.constructorAction !== 'undefined') {
+      if (
+        options.constructorAction === 'error' ||
+        options.constructorAction === 'ignore' ||
+        options.constructorAction === 'preserve'
+      ) {
+        _options.constructorAction = options.constructorAction;
+      } else {
+        throw new Error(
+          `Incorrect value for constructorAction option, must be "error", "ignore" or undefined but passed ${options.constructorAction}`
+        );
+      }
     }
 
-    function parseNumber(token, insideTryCatch) {
-        var sign = 1;
-        if (token.charAt(0) === "-") {
-            sign = -1;
-            token = token.substring(1);
+    if (typeof options.protoAction !== 'undefined') {
+      if (
+        options.protoAction === 'error' ||
+        options.protoAction === 'ignore' ||
+        options.protoAction === 'preserve'
+      ) {
+        _options.protoAction = options.protoAction;
+      } else {
+        throw new Error(
+          `Incorrect value for protoAction option, must be "error", "ignore" or undefined but passed ${options.protoAction}`
+        );
+      }
+    }
+  }
+
+  var at, // The index of the current character
+    ch, // The current character
+    escapee = {
+      '"': '"',
+      '\\': '\\',
+      '/': '/',
+      b: '\b',
+      f: '\f',
+      n: '\n',
+      r: '\r',
+      t: '\t',
+    },
+    text,
+    error = function (m) {
+      // Call error when something is wrong.
+
+      throw {
+        name: 'SyntaxError',
+        message: m,
+        at: at,
+        text: text,
+      };
+    },
+    next = function (c) {
+      // If a c parameter is provided, verify that it matches the current character.
+
+      if (c && c !== ch) {
+        error("Expected '" + c + "' instead of '" + ch + "'");
+      }
+
+      // Get the next character. When there are no more characters,
+      // return the empty string.
+
+      ch = text.charAt(at);
+      at += 1;
+      return ch;
+    },
+    number = function () {
+      // Parse a number value.
+
+      var number,
+        string = '';
+
+      if (ch === '-') {
+        string = '-';
+        next('-');
+      }
+      while (ch >= '0' && ch <= '9') {
+        string += ch;
+        next();
+      }
+      if (ch === '.') {
+        string += '.';
+        while (next() && ch >= '0' && ch <= '9') {
+          string += ch;
         }
-        switch (token) {
-            case "inf": case "INF": case "Inf":
-                return sign * Infinity;
-            case "nan": case "NAN": case "Nan": case "NaN":
-                return NaN;
-            case "0":
-                return 0;
+      }
+      if (ch === 'e' || ch === 'E') {
+        string += ch;
+        next();
+        if (ch === '-' || ch === '+') {
+          string += ch;
+          next();
         }
-        if (base10Re.test(token))
-            return sign * parseInt(token, 10);
-        if (base16Re.test(token))
-            return sign * parseInt(token, 16);
-        if (base8Re.test(token))
-            return sign * parseInt(token, 8);
-
-        /* istanbul ignore else */
-        if (numberRe.test(token))
-            return sign * parseFloat(token);
-
-        /* istanbul ignore next */
-        throw illegal(token, "number", insideTryCatch);
-    }
-
-    function parseId(token, acceptNegative) {
-        switch (token) {
-            case "max": case "MAX": case "Max":
-                return 536870911;
-            case "0":
-                return 0;
+        while (ch >= '0' && ch <= '9') {
+          string += ch;
+          next();
         }
-
-        /* istanbul ignore if */
-        if (!acceptNegative && token.charAt(0) === "-")
-            throw illegal(token, "id");
-
-        if (base10NegRe.test(token))
-            return parseInt(token, 10);
-        if (base16NegRe.test(token))
-            return parseInt(token, 16);
-
-        /* istanbul ignore else */
-        if (base8NegRe.test(token))
-            return parseInt(token, 8);
-
-        /* istanbul ignore next */
-        throw illegal(token, "id");
-    }
-
-    function parsePackage() {
-        /* istanbul ignore if */
-        if (pkg !== undefined)
-            throw illegal("package");
-
-        pkg = next();
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(pkg))
-            throw illegal(pkg, "name");
-
-        ptr = ptr.define(pkg);
-
-        skip(";");
-    }
-
-    function parseImport() {
-        var token = peek();
-        var whichImports;
-        switch (token) {
-            case "weak":
-                whichImports = weakImports || (weakImports = []);
-                next();
-                break;
-            case "public":
-                next();
-                // eslint-disable-next-line no-fallthrough
-            default:
-                whichImports = imports || (imports = []);
-                break;
-        }
-        token = readString();
-        skip(";");
-        whichImports.push(token);
-    }
-
-    function parseSyntax() {
-        skip("=");
-        edition = readString();
-
-        /* istanbul ignore if */
-        if (edition < 2023)
-            throw illegal(edition, "syntax");
-
-        skip(";");
-    }
-
-    function parseEdition() {
-        skip("=");
-        edition = readString();
-        const supportedEditions = ["2023"];
-
-        /* istanbul ignore if */
-        if (!supportedEditions.includes(edition))
-            throw illegal(edition, "edition");
-
-        skip(";");
-    }
-
-
-    function parseCommon(parent, token, depth) {
-        if (depth === undefined)
-            depth = 0;
-        // depth is checked by dispatched functions
-        switch (token) {
-
-            case "option":
-                parseOption(parent, token);
-                skip(";");
-                return true;
-
-            case "message":
-                parseType(parent, token, depth + 1);
-                return true;
-
-            case "enum":
-                parseEnum(parent, token);
-                return true;
-
-            case "service":
-                parseService(parent, token, depth + 1);
-                return true;
-
-            case "extend":
-                parseExtension(parent, token, depth);
-                return true;
-        }
-        return false;
-    }
-
-    function ifBlock(obj, fnIf, fnElse) {
-        var trailingLine = tn.line;
-        if (obj) {
-            if(typeof obj.comment !== "string") {
-              obj.comment = cmnt(); // try block-type comment
-            }
-            obj.filename = parse.filename;
-        }
-        if (skip("{", true)) {
-            var token;
-            while ((token = next()) !== "}")
-                fnIf(token);
-            skip(";", true);
-        } else {
-            if (fnElse)
-                fnElse();
-            skip(";");
-            if (obj && (typeof obj.comment !== "string" || preferTrailingComment))
-                obj.comment = cmnt(trailingLine) || obj.comment; // try line-type comment
-        }
-    }
-
-    function parseType(parent, token, depth) {
-        if (depth === undefined)
-            depth = 0;
-        if (depth > util.nestingLimit)
-            throw Error("max depth exceeded");
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token = next()))
-            throw illegal(token, "type name");
-
-        var type = new Type(token);
-        ifBlock(type, function parseType_block(token) {
-            if (parseCommon(type, token, depth))
-                return;
-
-            switch (token) {
-
-                case "map":
-                    parseMapField(type, token);
-                    break;
-
-                case "required":
-                    if (edition !== "proto2")
-                        throw illegal(token);
-                /* eslint-disable no-fallthrough */
-                case "repeated":
-                    parseField(type, token, undefined, depth + 1);
-                    break;
-
-                case "optional":
-                    /* istanbul ignore if */
-                    if (edition === "proto3") {
-                        parseField(type, "proto3_optional", undefined, depth + 1);
-                    } else if (edition !== "proto2") {
-                        throw illegal(token);
-                    } else {
-                        parseField(type, "optional", undefined, depth + 1);
-                    }
-                    break;
-
-                case "oneof":
-                    parseOneOf(type, token, depth + 1);
-                    break;
-
-                case "extensions":
-                    readRanges(type.extensions || (type.extensions = []));
-                    break;
-
-                case "reserved":
-                    readRanges(type.reserved || (type.reserved = []), true);
-                    break;
-
-                default:
-                    /* istanbul ignore if */
-                    if (edition === "proto2" || !typeRefRe.test(token)) {
-                        throw illegal(token);
-                    }
-
-                    push(token);
-                    parseField(type, "optional", undefined, depth + 1);
-                    break;
-            }
-        });
-        parent.add(type);
-        if (parent === ptr) {
-            topLevelObjects.push(type);
-        }
-    }
-
-    function parseField(parent, rule, extend, depth) {
-        var type = next();
-        if (type === "group") {
-            parseGroup(parent, rule, depth);
-            return;
-        }
-        // Type names can consume multiple tokens, in multiple variants:
-        //    package.subpackage   field       tokens: "package.subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package . subpackage field       tokens: "package" "." "subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package.  subpackage field       tokens: "package." "subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package  .subpackage field       tokens: "package" ".subpackage" [TYPE NAME ENDS HERE] "field"
-        // Keep reading tokens until we get a type name with no period at the end,
-        // and the next token does not start with a period.
-        while (type.endsWith(".") || peek().startsWith(".")) {
-            type += next();
-        }
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(type))
-            throw illegal(type, "type");
-
-        var name = next();
-
-        /* istanbul ignore if */
-
-        if (!nameRe.test(name))
-            throw illegal(name, "name");
-
-        name = applyCase(name);
-        skip("=");
-
-        var field = new Field(name, parseId(next()), type, rule, extend);
-
-        ifBlock(field, function parseField_block(token) {
-
-            /* istanbul ignore else */
-            if (token === "option") {
-                parseOption(field, token);
-                skip(";");
-            } else
-                throw illegal(token);
-
-        }, function parseField_line() {
-            parseInlineOptions(field);
-        });
-
-        if (rule === "proto3_optional") {
-            // for proto3 optional fields, we create a single-member Oneof to mimic "optional" behavior
-            var oneof = new OneOf("_" + name);
-            field.setOption("proto3_optional", true);
-            oneof.add(field);
-            parent.add(oneof);
-        } else {
-            parent.add(field);
-        }
-        if (parent === ptr) {
-            topLevelObjects.push(field);
-        }
-    }
-
-    function parseGroup(parent, rule, depth) {
-        if (depth === undefined)
-            depth = 0;
-        if (depth > util.nestingLimit)
-            throw Error("max depth exceeded");
-        if (edition >= 2023) {
-            throw illegal("group");
-        }
-        var name = next();
-
-        /* istanbul ignore if */
-        if (!nameRe.test(name))
-            throw illegal(name, "name");
-
-        var fieldName = util.lcFirst(name);
-        if (name === fieldName)
-            name = util.ucFirst(name);
-        skip("=");
-        var id = parseId(next());
-        var type = new Type(name);
-        type.group = true;
-        var field = new Field(fieldName, id, name, rule);
-        field.filename = parse.filename;
-        ifBlock(type, function parseGroup_block(token) {
-            switch (token) {
-
-                case "option":
-                    parseOption(type, token);
-                    skip(";");
-                    break;
-                case "required":
-                case "repeated":
-                    parseField(type, token, undefined, depth + 1);
-                    break;
-
-                case "optional":
-                    /* istanbul ignore if */
-                    if (edition === "proto3") {
-                        parseField(type, "proto3_optional", undefined, depth + 1);
-                    } else {
-                        parseField(type, "optional", undefined, depth + 1);
-                    }
-                    break;
-
-                case "message":
-                    parseType(type, token, depth + 1);
-                    break;
-
-                case "enum":
-                    parseEnum(type, token);
-                    break;
-
-                case "reserved":
-                    readRanges(type.reserved || (type.reserved = []), true);
-                    break;
-
-                /* istanbul ignore next */
-                default:
-                    throw illegal(token); // there are no groups with proto3 semantics
-            }
-        });
-        parent.add(type)
-              .add(field);
-    }
-
-    function parseMapField(parent) {
-        skip("<");
-        var keyType = next();
-
-        /* istanbul ignore if */
-        if (types.mapKey[keyType] === undefined)
-            throw illegal(keyType, "type");
-
-        skip(",");
-        var valueType = next();
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(valueType))
-            throw illegal(valueType, "type");
-
-        skip(">");
-        var name = next();
-
-        /* istanbul ignore if */
-        if (!nameRe.test(name))
-            throw illegal(name, "name");
-
-        skip("=");
-        var field = new MapField(applyCase(name), parseId(next()), keyType, valueType);
-        ifBlock(field, function parseMapField_block(token) {
-
-            /* istanbul ignore else */
-            if (token === "option") {
-                parseOption(field, token);
-                skip(";");
-            } else
-                throw illegal(token);
-
-        }, function parseMapField_line() {
-            parseInlineOptions(field);
-        });
-        parent.add(field);
-    }
-
-    function parseOneOf(parent, token, depth) {
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token = next()))
-            throw illegal(token, "name");
-
-        var oneof = new OneOf(applyCase(token));
-        ifBlock(oneof, function parseOneOf_block(token) {
-            if (token === "option") {
-                parseOption(oneof, token);
-                skip(";");
-            } else {
-                push(token);
-                parseField(oneof, "optional", undefined, depth);
-            }
-        });
-        parent.add(oneof);
-    }
-
-    function parseEnum(parent, token) {
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token = next()))
-            throw illegal(token, "name");
-
-        var enm = new Enum(token);
-        ifBlock(enm, function parseEnum_block(token) {
-          switch(token) {
-            case "option":
-              parseOption(enm, token);
-              skip(";");
-              break;
-
-            case "reserved":
-              readRanges(enm.reserved || (enm.reserved = []), true);
-              if(enm.reserved === undefined) enm.reserved = [];
-              break;
-
-            default:
-              parseEnumValue(enm, token);
+      }
+      number = +string;
+      if (!isFinite(number)) {
+        error('Bad number');
+      } else {
+        if (BigNumber == null) BigNumber = require('bignumber.js');
+        //if (number > 9007199254740992 || number < -9007199254740992)
+        // Bignumber has stricter check: everything with length > 15 digits disallowed
+        if (string.length > 15)
+          return _options.storeAsString
+            ? string
+            : _options.useNativeBigInt
+            ? BigInt(string)
+            : new BigNumber(string);
+        else
+          return !_options.alwaysParseAsBig
+            ? number
+            : _options.useNativeBigInt
+            ? BigInt(number)
+            : new BigNumber(number);
+      }
+    },
+    string = function () {
+      // Parse a string value.
+
+      var hex,
+        i,
+        string = '',
+        uffff;
+
+      // When parsing for string values, we must look for " and \ characters.
+
+      if (ch === '"') {
+        var startAt = at;
+        while (next()) {
+          if (ch === '"') {
+            if (at - 1 > startAt) string += text.substring(startAt, at - 1);
+            next();
+            return string;
           }
-        });
-        parent.add(enm);
-        if (parent === ptr) {
-            topLevelObjects.push(enm);
-        }
-    }
-
-    function parseEnumValue(parent, token) {
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token))
-            throw illegal(token, "name");
-
-        skip("=");
-        var value = parseId(next(), true),
-            dummy = {
-                options: undefined
-            };
-        dummy.getOption = function(name) {
-            return this.options[name];
-        };
-        dummy.setOption = function(name, value) {
-            ReflectionObject.prototype.setOption.call(dummy, name, value);
-        };
-        dummy.setParsedOption = function() {
-            return undefined;
-        };
-        ifBlock(dummy, function parseEnumValue_block(token) {
-
-            /* istanbul ignore else */
-            if (token === "option") {
-                parseOption(dummy, token); // skip
-                skip(";");
-            } else
-                throw illegal(token);
-
-        }, function parseEnumValue_line() {
-            parseInlineOptions(dummy); // skip
-        });
-        parent.add(token, value, dummy.comment, dummy.parsedOptions || dummy.options);
-    }
-
-    function parseOption(parent, token) {
-            var option;
-            var propName;
-            var isOption = true;
-            if (token === "option") {
-                token = next();
+          if (ch === '\\') {
+            if (at - 1 > startAt) string += text.substring(startAt, at - 1);
+            next();
+            if (ch === 'u') {
+              uffff = 0;
+              for (i = 0; i < 4; i += 1) {
+                hex = parseInt(next(), 16);
+                if (!isFinite(hex)) {
+                  break;
+                }
+                uffff = uffff * 16 + hex;
+              }
+              string += String.fromCharCode(uffff);
+            } else if (typeof escapee[ch] === 'string') {
+              string += escapee[ch];
+            } else {
+              break;
             }
+            startAt = at;
+          }
+        }
+      }
+      error('Bad string');
+    },
+    white = function () {
+      // Skip whitespace.
 
-            while (token !== "=") {
-                if (token === null) {
-                    throw illegal(token, "end of input");
-                }
-                if (token === "(") {
-                    var parensValue = next();
-                    skip(")");
-                    token = "(" + parensValue + ")";
-                }
-                if (isOption) {
-                    isOption = false;
-                    if (token.includes(".") && !token.includes("(")) {
-                        var tokens = token.split(".");
-                        option = tokens[0] + ".";
-                        token = tokens[1];
-                        continue;
-                    }
-                    option = token;
-                } else {
-                    propName = propName ? propName += token : token;
-                }
-                token = next();
+      while (ch && ch <= ' ') {
+        next();
+      }
+    },
+    word = function () {
+      // true, false, or null.
+
+      switch (ch) {
+        case 't':
+          next('t');
+          next('r');
+          next('u');
+          next('e');
+          return true;
+        case 'f':
+          next('f');
+          next('a');
+          next('l');
+          next('s');
+          next('e');
+          return false;
+        case 'n':
+          next('n');
+          next('u');
+          next('l');
+          next('l');
+          return null;
+      }
+      error("Unexpected '" + ch + "'");
+    },
+    value, // Place holder for the value function.
+    array = function () {
+      // Parse an array value.
+
+      var array = [];
+
+      if (ch === '[') {
+        next('[');
+        white();
+        if (ch === ']') {
+          next(']');
+          return array; // empty array
+        }
+        while (ch) {
+          array.push(value());
+          white();
+          if (ch === ']') {
+            next(']');
+            return array;
+          }
+          next(',');
+          white();
+        }
+      }
+      error('Bad array');
+    },
+    object = function () {
+      // Parse an object value.
+
+      var key,
+        object = Object.create(null);
+
+      if (ch === '{') {
+        next('{');
+        white();
+        if (ch === '}') {
+          next('}');
+          return object; // empty object
+        }
+        while (ch) {
+          key = string();
+          white();
+          next(':');
+          if (
+            _options.strict === true &&
+            Object.hasOwnProperty.call(object, key)
+          ) {
+            error('Duplicate key "' + key + '"');
+          }
+
+          if (suspectProtoRx.test(key) === true) {
+            if (_options.protoAction === 'error') {
+              error('Object contains forbidden prototype property');
+            } else if (_options.protoAction === 'ignore') {
+              value();
+            } else {
+              object[key] = value();
             }
-            var name = propName ? option.concat(propName) : option;
-            var optionValue = parseOptionValue(parent, name);
-            propName = propName && propName[0] === "." ? propName.slice(1) : propName;
-            option = option && option[option.length - 1] === "." ? option.slice(0, -1) : option;
-            setParsedOption(parent, option, optionValue, propName);
-    }
-
-    function parseOptionValue(parent, name, depth) {
-        if (depth === undefined)
-            depth = 0;
-        if (depth > util.recursionLimit)
-            throw Error("max depth exceeded");
-        // { a: "foo" b { c: "bar" } }
-        if (skip("{", true)) {
-            var objectResult = {};
-
-            while (!skip("}", true)) {
-                /* istanbul ignore if */
-                if (!nameRe.test(token = next())) {
-                    throw illegal(token, "name");
-                }
-                if (token === null) {
-                  throw illegal(token, "end of input");
-                }
-
-                var value;
-                var propName = token;
-
-                skip(":", true);
-
-                if (peek() === "{") {
-                    // option (my_option) = {
-                    //     repeated_value: [ "foo", "bar" ]
-                    // };
-                    value = parseOptionValue(parent, name + "." + token, depth + 1);
-                } else if (peek() === "[") {
-                    value = [];
-                    var lastValue;
-                    if (skip("[", true)) {
-                        do {
-                            lastValue = readValue(true);
-                            value.push(lastValue);
-                        } while (skip(",", true));
-                        skip("]");
-                        if (typeof lastValue !== "undefined") {
-                            setOption(parent, name + "." + token, lastValue);
-                        }
-                    }
-                } else {
-                    value = readValue(true);
-                    setOption(parent, name + "." + token, value);
-                }
-
-                var prevValue = objectResult[propName];
-
-                if (prevValue)
-                    value = [].concat(prevValue).concat(value);
-
-                if (propName !== "__proto__")
-                    objectResult[propName] = value;
-
-                // Semicolons and commas can be optional
-                skip(",", true);
-                skip(";", true);
+          } else if (suspectConstructorRx.test(key) === true) {
+            if (_options.constructorAction === 'error') {
+              error('Object contains forbidden constructor property');
+            } else if (_options.constructorAction === 'ignore') {
+              value();
+            } else {
+              object[key] = value();
             }
+          } else {
+            object[key] = value();
+          }
 
-            return objectResult;
+          white();
+          if (ch === '}') {
+            next('}');
+            return object;
+          }
+          next(',');
+          white();
         }
-
-        var simpleValue = readValue(true);
-        setOption(parent, name, simpleValue);
-        return simpleValue;
-        // Does not enforce a delimiter to be universal
-    }
-
-    function setOption(parent, name, value) {
-        if (ptr === parent && /^features\./.test(name)) {
-            topLevelOptions[name] = value;
-            return;
-        }
-        if (parent.setOption)
-            parent.setOption(name, value);
-    }
-
-    function setParsedOption(parent, name, value, propName) {
-        if (parent.setParsedOption)
-            parent.setParsedOption(name, value, propName);
-    }
-
-    function parseInlineOptions(parent) {
-        if (skip("[", true)) {
-            do {
-                parseOption(parent, "option");
-            } while (skip(",", true));
-            skip("]");
-        }
-        return parent;
-    }
-
-    function parseService(parent, token, depth) {
-        if (depth === undefined)
-            depth = 0;
-        if (depth > util.recursionLimit)
-            throw Error("max depth exceeded");
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token = next()))
-            throw illegal(token, "service name");
-
-        var service = new Service(token);
-        ifBlock(service, function parseService_block(token) {
-            if (parseCommon(service, token, depth)) {
-                return;
-            }
-
-            /* istanbul ignore else */
-            if (token === "rpc")
-                parseMethod(service, token);
-            else
-                throw illegal(token);
-        });
-        parent.add(service);
-        if (parent === ptr) {
-            topLevelObjects.push(service);
-        }
-    }
-
-    function parseMethod(parent, token) {
-        // Get the comment of the preceding line now (if one exists) in case the
-        // method is defined across multiple lines.
-        var commentText = cmnt();
-
-        var type = token;
-
-        /* istanbul ignore if */
-        if (!nameRe.test(token = next()))
-            throw illegal(token, "name");
-
-        var name = token,
-            requestType, requestStream,
-            responseType, responseStream;
-
-        skip("(");
-        if (skip("stream", true))
-            requestStream = true;
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(token = next()))
-            throw illegal(token);
-
-        requestType = token;
-        skip(")"); skip("returns"); skip("(");
-        if (skip("stream", true))
-            responseStream = true;
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(token = next()))
-            throw illegal(token);
-
-        responseType = token;
-        skip(")");
-
-        var method = new Method(name, type, requestType, responseType, requestStream, responseStream);
-        method.comment = commentText;
-        ifBlock(method, function parseMethod_block(token) {
-
-            /* istanbul ignore else */
-            if (token === "option") {
-                parseOption(method, token);
-                skip(";");
-            } else
-                throw illegal(token);
-
-        });
-        parent.add(method);
-    }
-
-    function parseExtension(parent, token, depth) {
-
-        /* istanbul ignore if */
-        if (!typeRefRe.test(token = next()))
-            throw illegal(token, "reference");
-
-        var reference = token;
-        ifBlock(null, function parseExtension_block(token) {
-            switch (token) {
-
-                case "required":
-                case "repeated":
-                    parseField(parent, token, reference, depth + 1);
-                    break;
-
-                case "optional":
-                    /* istanbul ignore if */
-                    if (edition === "proto3") {
-                        parseField(parent, "proto3_optional", reference, depth + 1);
-                    } else {
-                        parseField(parent, "optional", reference, depth + 1);
-                    }
-                    break;
-
-                default:
-                    /* istanbul ignore if */
-                    if (edition === "proto2" || !typeRefRe.test(token))
-                        throw illegal(token);
-                    push(token);
-                    parseField(parent, "optional", reference, depth + 1);
-                    break;
-            }
-        });
-    }
-
-    var token;
-    while ((token = next()) !== null) {
-        switch (token) {
-
-            case "package":
-
-                /* istanbul ignore if */
-                if (!head)
-                    throw illegal(token);
-
-                parsePackage();
-                break;
-
-            case "import":
-
-                /* istanbul ignore if */
-                if (!head)
-                    throw illegal(token);
-
-                parseImport();
-                break;
-
-            case "syntax":
-
-                /* istanbul ignore if */
-                if (!head)
-                    throw illegal(token);
-
-                parseSyntax();
-                break;
-
-            case "edition":
-                /* istanbul ignore if */
-                if (!head)
-                    throw illegal(token);
-                parseEdition();
-                break;
-
-            case "option":
-                parseOption(ptr, token);
-                skip(";", true);
-                break;
-
-            default:
-
-                /* istanbul ignore else */
-                if (parseCommon(ptr, token, 0)) {
-                    head = false;
-                    continue;
-                }
-
-                /* istanbul ignore next */
-                throw illegal(token);
-        }
-    }
-
-    resolveFileFeatures();
-
-    parse.filename = null;
-    return {
-        "package"     : pkg,
-        "imports"     : imports,
-         weakImports  : weakImports,
-         root         : root
+      }
+      error('Bad object');
     };
-}
 
-/**
- * Parses the given .proto source and returns an object with the parsed contents.
- * @name parse
- * @function
- * @param {string} source Source contents
- * @param {IParseOptions} [options] Parse options. Defaults to {@link parse.defaults} when omitted.
- * @returns {IParserResult} Parser result
- * @property {string} filename=null Currently processing file name for error reporting, if known
- * @property {IParseOptions} defaults Default {@link IParseOptions}
- * @variation 2
- */
+  value = function () {
+    // Parse a JSON value. It could be an object, an array, a string, a number,
+    // or a word.
+
+    white();
+    switch (ch) {
+      case '{':
+        return object();
+      case '[':
+        return array();
+      case '"':
+        return string();
+      case '-':
+        return number();
+      default:
+        return ch >= '0' && ch <= '9' ? number() : word();
+    }
+  };
+
+  // Return the json_parse function. It will have access to all of the above
+  // functions and variables.
+
+  return function (source, reviver) {
+    var result;
+
+    text = source + '';
+    at = 0;
+    ch = ' ';
+    result = value();
+    white();
+    if (ch) {
+      error('Syntax error');
+    }
+
+    // If there is a reviver function, we recursively walk the new structure,
+    // passing each name/value pair to the reviver function for possible
+    // transformation, starting with a temporary root object that holds the result
+    // in an empty key. If there is not a reviver function, we simply return the
+    // result.
+
+    return typeof reviver === 'function'
+      ? (function walk(holder, key) {
+          var k,
+            v,
+            value = holder[key];
+          if (value && typeof value === 'object') {
+            Object.keys(value).forEach(function (k) {
+              v = walk(value, k);
+              if (v !== undefined) {
+                value[k] = v;
+              } else {
+                delete value[k];
+              }
+            });
+          }
+          return reviver.call(holder, key, value);
+        })({ '': result }, '')
+      : result;
+  };
+};
+
+module.exports = json_parse;

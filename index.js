@@ -1,180 +1,265 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.HttpsProxyAgent = void 0;
-const net = __importStar(require("net"));
-const tls = __importStar(require("tls"));
-const assert_1 = __importDefault(require("assert"));
-const debug_1 = __importDefault(require("debug"));
-const agent_base_1 = require("agent-base");
-const url_1 = require("url");
-const parse_proxy_response_1 = require("./parse-proxy-response");
-const debug = (0, debug_1.default)('https-proxy-agent');
-const setServernameFromNonIpHost = (options) => {
-    if (options.servername === undefined &&
-        options.host &&
-        !net.isIP(options.host)) {
-        return {
-            ...options,
-            servername: options.host,
-        };
-    }
-    return options;
-};
 /**
- * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to
- * the specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
- *
- * Outgoing HTTP requests are first tunneled through the proxy server using the
- * `CONNECT` HTTP request method to establish a connection to the proxy server,
- * and then the proxy server connects to the destination target and issues the
- * HTTP request from the proxy server.
- *
- * `https:` requests have their socket connection upgraded to TLS once
- * the connection to the proxy server has been established.
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
-class HttpsProxyAgent extends agent_base_1.Agent {
-    constructor(proxy, opts) {
-        super(opts);
-        this.options = { path: undefined };
-        this.proxy = typeof proxy === 'string' ? new url_1.URL(proxy) : proxy;
-        this.proxyHeaders = opts?.headers ?? {};
-        debug('Creating new HttpsProxyAgent instance: %o', this.proxy.href);
-        // Trim off the brackets from IPv6 addresses
-        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
-        const port = this.proxy.port
-            ? parseInt(this.proxy.port, 10)
-            : this.proxy.protocol === 'https:'
-                ? 443
-                : 80;
-        this.connectOpts = {
-            // Attempt to negotiate http/1.1 for proxy servers that support http/2
-            ALPNProtocols: ['http/1.1'],
-            ...(opts ? omit(opts, 'headers') : null),
-            host,
-            port,
-        };
-    }
-    /**
-     * Called when the node-core HTTP client library is creating a
-     * new HTTP request.
-     */
-    async connect(req, opts) {
-        const { proxy } = this;
-        if (!opts.host) {
-            throw new TypeError('No "host" provided');
-        }
-        // Create a socket connection to the proxy server.
-        let socket;
-        if (proxy.protocol === 'https:') {
-            debug('Creating `tls.Socket`: %o', this.connectOpts);
-            socket = tls.connect(setServernameFromNonIpHost(this.connectOpts));
-        }
-        else {
-            debug('Creating `net.Socket`: %o', this.connectOpts);
-            socket = net.connect(this.connectOpts);
-        }
-        const headers = typeof this.proxyHeaders === 'function'
-            ? this.proxyHeaders()
-            : { ...this.proxyHeaders };
-        const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
-        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
-        // Inject the `Proxy-Authorization` header if necessary.
-        if (proxy.username || proxy.password) {
-            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
-        }
-        headers.Host = `${host}:${opts.port}`;
-        if (!headers['Proxy-Connection']) {
-            headers['Proxy-Connection'] = this.keepAlive
-                ? 'Keep-Alive'
-                : 'close';
-        }
-        for (const name of Object.keys(headers)) {
-            payload += `${name}: ${headers[name]}\r\n`;
-        }
-        const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
-        socket.write(`${payload}\r\n`);
-        const { connect, buffered } = await proxyResponsePromise;
-        req.emit('proxyConnect', connect);
-        this.emit('proxyConnect', connect, req);
-        if (connect.statusCode === 200) {
-            req.once('socket', resume);
-            if (opts.secureEndpoint) {
-                // The proxy is connecting to a TLS server, so upgrade
-                // this socket connection to a TLS connection.
-                debug('Upgrading socket connection to TLS');
-                return tls.connect({
-                    ...omit(setServernameFromNonIpHost(opts), 'host', 'path', 'port'),
-                    socket,
-                });
-            }
-            return socket;
-        }
-        // Some other status code that's not 200... need to re-play the HTTP
-        // header "data" events onto the socket once the HTTP machinery is
-        // attached so that the node core `http` can parse and handle the
-        // error status code.
-        // Close the original socket, and a new "fake" socket is returned
-        // instead, so that the proxy doesn't get the HTTP request
-        // written to it (which may contain `Authorization` headers or other
-        // sensitive data).
-        //
-        // See: https://hackerone.com/reports/541502
-        socket.destroy();
-        const fakeSocket = new net.Socket({ writable: false });
-        fakeSocket.readable = true;
-        // Need to wait for the "socket" event to re-play the "data" events.
-        req.once('socket', (s) => {
-            debug('Replaying proxy buffer for failed request');
-            (0, assert_1.default)(s.listenerCount('data') > 0);
-            // Replay the "buffered" Buffer onto the fake `socket`, since at
-            // this point the HTTP module machinery has been hooked up for
-            // the user.
-            s.push(buffered);
-            s.push(null);
-        });
-        return fakeSocket;
-    }
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0,
+    MAX_INTEGER = 1.7976931348623157e+308,
+    NAN = 0 / 0;
+
+/** `Object#toString` result references. */
+var symbolTag = '[object Symbol]';
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString = objectProto.toString;
+
+/**
+ * Checks if `value` is an integer.
+ *
+ * **Note:** This method is based on
+ * [`Number.isInteger`](https://mdn.io/Number/isInteger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an integer, else `false`.
+ * @example
+ *
+ * _.isInteger(3);
+ * // => true
+ *
+ * _.isInteger(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isInteger(Infinity);
+ * // => false
+ *
+ * _.isInteger('3');
+ * // => false
+ */
+function isInteger(value) {
+  return typeof value == 'number' && value == toInteger(value);
 }
-HttpsProxyAgent.protocols = ['http', 'https'];
-exports.HttpsProxyAgent = HttpsProxyAgent;
-function resume(socket) {
-    socket.resume();
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return !!value && (type == 'object' || type == 'function');
 }
-function omit(obj, ...keys) {
-    const ret = {};
-    let key;
-    for (key in obj) {
-        if (!keys.includes(key)) {
-            ret[key] = obj[key];
-        }
-    }
-    return ret;
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return !!value && typeof value == 'object';
 }
-//# sourceMappingURL=index.js.map
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+}
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber(value);
+  if (value === INFINITY || value === -INFINITY) {
+    var sign = (value < 0 ? -1 : 1);
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+/**
+ * Converts `value` to an integer.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted integer.
+ * @example
+ *
+ * _.toInteger(3.2);
+ * // => 3
+ *
+ * _.toInteger(Number.MIN_VALUE);
+ * // => 0
+ *
+ * _.toInteger(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toInteger('3.2');
+ * // => 3
+ */
+function toInteger(value) {
+  var result = toFinite(value),
+      remainder = result % 1;
+
+  return result === result ? (remainder ? result - remainder : result) : 0;
+}
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol(value)) {
+    return NAN;
+  }
+  if (isObject(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject(other) ? (other + '') : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return (isBinary || reIsOctal.test(value))
+    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(value) ? NAN : +value);
+}
+
+module.exports = isInteger;
