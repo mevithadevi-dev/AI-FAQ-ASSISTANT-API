@@ -4,14 +4,13 @@
 	"extends": "@ljharb",
 
 	"rules": {
-		"func-name-matching": 0,
-		"id-length": 0,
-		"new-cap": [2, {
+		"eqeqeq": ["error", "allow-null"],
+		"id-length": "off",
+		"new-cap": ["error", {
 			"capIsNewExceptions": [
-				"GetIntrinsic",
+				"RequireObjectCoercible",
+				"ToObject",
 			],
 		}],
-		"no-extra-parens": 0,
-		"no-magic-numbers": 0,
 	},
 }
