@@ -1,15 +1,15 @@
 # Installation
-> `npm install --save @types/node`
+> `npm install --save @types/whatwg-url`
 
 # Summary
-This package contains type definitions for node (https://nodejs.org/).
+This package contains type definitions for whatwg-url (https://github.com/jsdom/whatwg-url#readme).
 
 # Details
-Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node.
+Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/whatwg-url.
 
 ### Additional Details
- * Last updated: Fri, 25 Sep 2026 22:04:07 GMT
- * Dependencies: [undici-types](https://npmjs.com/package/undici-types)
+ * Last updated: Sat, 18 May 2024 21:06:54 GMT
+ * Dependencies: [@types/webidl-conversions](https://npmjs.com/package/@types/webidl-conversions)
 
 # Credits
-These definitions were written by [Microsoft TypeScript](https://github.com/Microsoft), [Alberto Schiabel](https://github.com/jkomyno), [Andrew Makarov](https://github.com/r3nya), [Benjamin Toueg](https://github.com/btoueg), [David Junger](https://github.com/touffy), [Mohsen Azimi](https://github.com/mohsen1), [Nikita Galkin](https://github.com/galkin), [Sebastian Silbermann](https://github.com/eps1lon), [Wilco Bakker](https://github.com/WilcoBakker), [Trivikram Kamat](https://github.com/trivikr), [Junxiao Shi](https://github.com/yoursunny), [ExE Boss](https://github.com/ExE-Boss), [Piotr Błażejewicz](https://github.com/peterblazejewicz), [Anna Henningsen](https://github.com/addaleax), [NodeJS Contributors](https://github.com/NodeJS), [Linus Unnebäck](https://github.com/LinusU), [wafuwafu13](https://github.com/wafuwafu13), [Matteo Collina](https://github.com/mcollina), [Dmitry Semigradsky](https://github.com/Semigradsky), [René](https://github.com/Renegade334), and [Yagiz Nizipli](https://github.com/anonrig).
+These definitions were written by [Alexander Marks](https://github.com/aomarks), [ExE Boss](https://github.com/ExE-Boss), and [BendingBender](https://github.com/BendingBender).
