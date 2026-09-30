@@ -1,528 +1,570 @@
-/*!
- * Module dependencies.
- */
-
-'use strict';
-
-const MongooseConnection = require('../../connection');
-const MongooseError = require('../../error/index');
-const STATES = require('../../connectionState');
-const mongodb = require('mongodb');
-const pkg = require('../../../package.json');
-const processConnectionOptions = require('../../helpers/processConnectionOptions');
-const setTimeout = require('../../helpers/timers').setTimeout;
-const utils = require('../../utils');
-const Schema = require('../../schema');
-
-/**
- * A [node-mongodb-native](https://github.com/mongodb/node-mongodb-native) connection implementation.
- *
- * @inherits Connection
- * @api private
- */
-
-function NativeConnection() {
-  MongooseConnection.apply(this, arguments);
-  this._listening = false;
-  // Tracks the last time (as unix timestamp) the connection received a
-  // serverHeartbeatSucceeded or serverHeartbeatFailed event from the underlying MongoClient.
-  // If we haven't received one in a while (like due to a frozen AWS Lambda container) then
-  // `readyState` is likely stale.
-  this._lastHeartbeatAt = null;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CryptoConnection = exports.SizedMessageTransform = exports.Connection = void 0;
+exports.hasSessionSupport = hasSessionSupport;
+const stream_1 = require("stream");
+const timers_1 = require("timers");
+const bson_1 = require("../bson");
+const constants_1 = require("../constants");
+const error_1 = require("../error");
+const mongo_logger_1 = require("../mongo_logger");
+const mongo_types_1 = require("../mongo_types");
+const read_preference_1 = require("../read_preference");
+const common_1 = require("../sdam/common");
+const sessions_1 = require("../sessions");
+const timeout_1 = require("../timeout");
+const utils_1 = require("../utils");
+const command_monitoring_events_1 = require("./command_monitoring_events");
+const commands_1 = require("./commands");
+const stream_description_1 = require("./stream_description");
+const compression_1 = require("./wire_protocol/compression");
+const on_data_1 = require("./wire_protocol/on_data");
+const responses_1 = require("./wire_protocol/responses");
+const shared_1 = require("./wire_protocol/shared");
+/** @internal */
+function hasSessionSupport(conn) {
+    const description = conn.description;
+    return description.logicalSessionTimeoutMinutes != null;
 }
-
-/**
- * Expose the possible connection states.
- * @api public
- */
-
-NativeConnection.STATES = STATES;
-
-/*!
- * Inherits from Connection.
- */
-
-Object.setPrototypeOf(NativeConnection.prototype, MongooseConnection.prototype);
-
-/**
- * Switches to a different database using the same connection pool.
- *
- * Returns a new connection object, with the new db. If you set the `useCache`
- * option, `useDb()` will cache connections by `name`.
- *
- * **Note:** Calling `close()` on a `useDb()` connection will close the base connection as well.
- *
- * @param {String} name The database name
- * @param {Object} [options]
- * @param {Boolean} [options.useCache=false] If true, cache results so calling `useDb()` multiple times with the same name only creates 1 connection object.
- * @param {Boolean} [options.noListener=false] If true, the new connection object won't listen to any events on the base connection. This is better for memory usage in cases where you're calling `useDb()` for every request.
- * @return {Connection} New Connection Object
- * @api public
- */
-
-NativeConnection.prototype.useDb = function(name, options) {
-  // Return immediately if cached
-  options = options || {};
-  if (options.useCache && this.relatedDbs[name]) {
-    return this.relatedDbs[name];
-  }
-
-  // we have to manually copy all of the attributes...
-  const newConn = new this.constructor();
-  newConn.name = name;
-  newConn.base = this.base;
-  newConn.collections = {};
-  newConn.models = {};
-  newConn.replica = this.replica;
-  newConn.config = Object.assign({}, this.config, newConn.config);
-  newConn.name = this.name;
-  newConn.options = this.options;
-  newConn._readyState = this._readyState;
-  newConn._closeCalled = this._closeCalled;
-  newConn._hasOpened = this._hasOpened;
-  newConn._listening = false;
-  newConn._parent = this;
-
-  newConn.host = this.host;
-  newConn.port = this.port;
-  newConn.user = this.user;
-  newConn.pass = this.pass;
-
-  // First, when we create another db object, we are not guaranteed to have a
-  // db object to work with. So, in the case where we have a db object and it
-  // is connected, we can just proceed with setting everything up. However, if
-  // we do not have a db or the state is not connected, then we need to wait on
-  // the 'open' event of the connection before doing the rest of the setup
-  // the 'connected' event is the first time we'll have access to the db object
-
-  const _this = this;
-
-  newConn.client = _this.client;
-
-  if (this.db && this._readyState === STATES.connected) {
-    wireup();
-  } else {
-    this._queue.push({ fn: wireup });
-  }
-
-  function wireup() {
-    newConn.client = _this.client;
-    const _opts = {};
-    if (Object.hasOwn(options, 'noListener')) {
-      _opts.noListener = options.noListener;
+function streamIdentifier(stream, options) {
+    if (options.proxyHost) {
+        // If proxy options are specified, the properties of `stream` itself
+        // will not accurately reflect what endpoint this is connected to.
+        return options.hostAddress.toString();
     }
-    newConn.db = _this.client.db(name, _opts);
-    newConn._lastHeartbeatAt = _this._lastHeartbeatAt;
-    newConn.onOpen();
-  }
-
-  newConn.name = name;
-
-  // push onto the otherDbs stack, this is used when state changes and when heartbeat is received
-  if (options.noListener !== true) {
-    this.otherDbs.push(newConn);
-  }
-  newConn.otherDbs.push(this);
-
-  // push onto the relatedDbs cache, this is used when state changes
-  if (options && options.useCache) {
-    this.relatedDbs[newConn.name] = newConn;
-    newConn.relatedDbs = this.relatedDbs;
-  }
-
-  return newConn;
-};
-
-/**
- * Runs a [db-level aggregate()](https://www.mongodb.com/docs/manual/reference/method/db.aggregate/) on this connection's underlying `db`
- *
- * @param {Array} pipeline
- * @param {Object} [options]
- */
-
-NativeConnection.prototype.aggregate = function aggregate(pipeline, options) {
-  return new this.base.Aggregate(null, this).append(pipeline).option(options ?? {});
-};
-
-/**
- * Removes the database connection with the given name created with `useDb()`.
- *
- * Throws an error if the database connection was not found.
- *
- * #### Example:
- *
- *     // Connect to `initialdb` first
- *     const conn = await mongoose.createConnection('mongodb://127.0.0.1:27017/initialdb').asPromise();
- *
- *     // Creates an un-cached connection to `mydb`
- *     const db = conn.useDb('mydb');
- *
- *     // Closes `db`, and removes `db` from `conn.relatedDbs` and `conn.otherDbs`
- *     await conn.removeDb('mydb');
- *
- * @method removeDb
- * @memberOf Connection
- * @param {String} name The database name
- * @return {Connection} this
- */
-
-NativeConnection.prototype.removeDb = function removeDb(name) {
-  const dbs = this.otherDbs.filter(db => db.name === name);
-  if (!dbs.length) {
-    throw new MongooseError(`No connections to database "${name}" found`);
-  }
-
-  for (const db of dbs) {
-    db._closeCalled = true;
-    db._destroyCalled = true;
-    db._readyState = STATES.disconnected;
-    db.$wasForceClosed = true;
-  }
-  delete this.relatedDbs[name];
-  this.otherDbs = this.otherDbs.filter(db => db.name !== name);
-};
-
-/**
- * Closes the connection
- *
- * @param {Boolean} [force]
- * @return {Connection} this
- * @api private
- */
-
-NativeConnection.prototype.doClose = async function doClose(force) {
-  if (this.client == null) {
-    return this;
-  }
-
-  let skipCloseClient = false;
-  if (force != null && typeof force === 'object') {
-    skipCloseClient = force.skipCloseClient;
-    force = force.force;
-  }
-
-  if (skipCloseClient) {
-    return this;
-  }
-
-  await this.client.close(force);
-  // Defer because the driver will wait at least 1ms before finishing closing
-  // the pool, see https://github.com/mongodb-js/mongodb-core/blob/a8f8e4ce41936babc3b9112bf42d609779f03b39/lib/connection/pool.js#L1026-L1030.
-  // If there's queued operations, you may still get some background work
-  // after the callback is called.
-  await new Promise(resolve => setTimeout(resolve, 1));
-
-  return this;
-};
-
-/**
- * Implementation of `listDatabases()` for MongoDB driver
- *
- * @return Promise
- * @api public
- */
-
-NativeConnection.prototype.listDatabases = async function listDatabases() {
-  await this._waitForConnect();
-
-  return await this.db.admin().listDatabases();
-};
-
-/*!
- * ignore
- */
-
-NativeConnection.prototype.createClient = async function createClient(uri, options) {
-  if (typeof uri !== 'string') {
-    throw new MongooseError('The `uri` parameter to `openUri()` must be a ' +
-      `string, got "${typeof uri}". Make sure the first parameter to ` +
-      '`mongoose.connect()` or `mongoose.createConnection()` is a string.');
-  }
-
-  if (this._destroyCalled) {
-    throw new MongooseError(
-      'Connection has been closed and destroyed, and cannot be used for re-opening the connection. ' +
-      'Please create a new connection with `mongoose.createConnection()` or `mongoose.connect()`.'
-    );
-  }
-
-  if (this.readyState === STATES.connecting || this.readyState === STATES.connected) {
-    if (this._connectionString !== uri) {
-      throw new MongooseError('Can\'t call `openUri()` on an active connection with ' +
-        'different connection strings. Make sure you aren\'t calling `mongoose.connect()` ' +
-        'multiple times. See: https://mongoosejs.com/docs/connections.html#multiple_connections');
+    const { remoteAddress, remotePort } = stream;
+    if (typeof remoteAddress === 'string' && typeof remotePort === 'number') {
+        return utils_1.HostAddress.fromHostPort(remoteAddress, remotePort).toString();
     }
-  }
-
-  options = processConnectionOptions(uri, options);
-
-  if (options) {
-
-    const autoIndex = options.config && options.config.autoIndex != null ?
-      options.config.autoIndex :
-      options.autoIndex;
-    if (autoIndex != null) {
-      this.config.autoIndex = autoIndex !== false;
-      delete options.config;
-      delete options.autoIndex;
-    }
-
-    if ('autoCreate' in options) {
-      this.config.autoCreate = !!options.autoCreate;
-      delete options.autoCreate;
-    }
-
-    if ('sanitizeFilter' in options) {
-      this.config.sanitizeFilter = options.sanitizeFilter;
-      delete options.sanitizeFilter;
-    }
-
-    if ('autoSearchIndex' in options) {
-      this.config.autoSearchIndex = options.autoSearchIndex;
-      delete options.autoSearchIndex;
-    }
-
-    if ('bufferTimeoutMS' in options) {
-      this.config.bufferTimeoutMS = options.bufferTimeoutMS;
-      delete options.bufferTimeoutMS;
-    }
-
-    // Backwards compat
-    if (options.user || options.pass) {
-      options.auth = options.auth || {};
-      options.auth.username = options.user;
-      options.auth.password = options.pass;
-
-      this.user = options.user;
-      this.pass = options.pass;
-    }
-    delete options.user;
-    delete options.pass;
-
-    if (options.bufferCommands != null) {
-      this.config.bufferCommands = options.bufferCommands;
-      delete options.bufferCommands;
-    }
-  } else {
-    options = {};
-  }
-
-  this._connectionOptions = options;
-  const dbName = options.dbName;
-  if (dbName != null) {
-    this.$dbName = dbName;
-  }
-  delete options.dbName;
-
-  if (!utils.hasUserDefinedProperty(options, 'driverInfo')) {
-    options.driverInfo = {
-      name: 'Mongoose',
-      version: pkg.version
-    };
-  }
-
-  const { schemaMap, encryptedFieldsMap } = this._buildEncryptionSchemas();
-
-  if ((Object.keys(schemaMap).length > 0 || Object.keys(encryptedFieldsMap).length) && !options.autoEncryption) {
-    throw new Error('Must provide `autoEncryption` when connecting with encrypted schemas.');
-  }
-
-  if (Object.keys(schemaMap).length > 0) {
-    options.autoEncryption.schemaMap = schemaMap;
-  }
-
-  if (Object.keys(encryptedFieldsMap).length > 0) {
-    options.autoEncryption.encryptedFieldsMap = encryptedFieldsMap;
-  }
-
-  this.readyState = STATES.connecting;
-  this._connectionString = uri;
-
-  let client;
-  try {
-    client = new mongodb.MongoClient(uri, options);
-  } catch (error) {
-    this.readyState = STATES.disconnected;
-    throw error;
-  }
-  this.client = client;
-
-  client.setMaxListeners(0);
-  await client.connect();
-
-  _setClient(this, client, options, dbName);
-
-  for (const db of this.otherDbs) {
-    _setClient(db, client, {}, db.name);
-  }
-  return this;
-};
-
-/**
- * Given a connection, which may or may not have encrypted models, build
- * a schemaMap and/or an encryptedFieldsMap for the connection, combining all models
- * into a single schemaMap and encryptedFields map.
- *
- * @returns the generated schemaMap and encryptedFieldsMap
-  */
-NativeConnection.prototype._buildEncryptionSchemas = function() {
-  const qeMappings = {};
-  const csfleMappings = {};
-
-  const encryptedModels = Object.values(this.models).filter(model => model.schema._hasEncryptedFields());
-
-  // If discriminators are configured for the collection, there might be multiple models
-  // pointing to the same namespace.  For this scenario, we merge all the schemas for each namespace
-  // into a single schema and then generate a schemaMap/encryptedFieldsMap for the combined schema.
-  for (const model of encryptedModels) {
-    const { schema, collection: { collectionName } } = model;
-    const namespace = `${this.$dbName}.${collectionName}`;
-    const mappings = schema.encryptionType() === 'csfle' ? csfleMappings : qeMappings;
-
-    mappings[namespace] ??= new Schema({}, { encryptionType: schema.encryptionType() });
-
-    const isNonRootDiscriminator = schema.discriminatorMapping && !schema.discriminatorMapping.isRoot;
-    if (isNonRootDiscriminator) {
-      const rootSchema = schema._baseSchema;
-      schema.eachPath((pathname) => {
-        if (rootSchema.path(pathname)) return;
-        if (!mappings[namespace]._hasEncryptedField(pathname)) return;
-
-        throw new Error(`Cannot have duplicate keys in discriminators with encryption. key=${pathname}`);
-      });
-    }
-
-    mappings[namespace].add(schema);
-  }
-
-  const schemaMap = Object.fromEntries(Object.entries(csfleMappings).map(
-    ([namespace, schema]) => ([namespace, schema._buildSchemaMap()])
-  ));
-
-  const encryptedFieldsMap = Object.fromEntries(Object.entries(qeMappings).map(
-    ([namespace, schema]) => ([namespace, schema._buildEncryptedFields()])
-  ));
-
-  return {
-    schemaMap, encryptedFieldsMap
-  };
-};
-
-/*!
- * ignore
- */
-
-NativeConnection.prototype.setClient = function setClient(client) {
-  if (!(client instanceof mongodb.MongoClient)) {
-    throw new MongooseError('Must call `setClient()` with an instance of MongoClient');
-  }
-  if (this.readyState !== STATES.disconnected) {
-    throw new MongooseError('Cannot call `setClient()` on a connection that is already connected.');
-  }
-  if (client.topology == null) {
-    throw new MongooseError('Cannot call `setClient()` with a MongoClient that you have not called `connect()` on yet.');
-  }
-
-  this._connectionString = client.s.url;
-  _setClient(this, client, {}, client.s.options.dbName);
-
-  for (const model of Object.values(this.models)) {
-    // Errors handled internally, so safe to ignore error
-    model.init().catch(function $modelInitNoop() {});
-  }
-
-  return this;
-};
-
-/*!
- * ignore
- */
-
-function _setClient(conn, client, options, dbName) {
-  const db = dbName != null ? client.db(dbName) : client.db();
-  conn.db = db;
-  conn.client = client;
-  conn.host = client &&
-    client.s &&
-    client.s.options &&
-    client.s.options.hosts &&
-    client.s.options.hosts[0] &&
-    client.s.options.hosts[0].host || void 0;
-  conn.port = client &&
-    client.s &&
-    client.s.options &&
-    client.s.options.hosts &&
-    client.s.options.hosts[0] &&
-    client.s.options.hosts[0].port || void 0;
-  conn.name = dbName != null ? dbName : db.databaseName;
-  conn._closeCalled = client._closeCalled;
-
-  const _handleReconnect = () => {
-    // If we aren't disconnected, we assume this reconnect is due to a
-    // socket timeout. If there's no activity on a socket for
-    // `socketTimeoutMS`, the driver will attempt to reconnect and emit
-    // this event.
-    if (conn.readyState !== STATES.connected) {
-      conn.readyState = STATES.connected;
-      conn.emit('reconnect');
-      conn.emit('reconnected');
-      conn.onOpen();
-    }
-  };
-
-  const type = client &&
-  client.topology &&
-  client.topology.description &&
-  client.topology.description.type || '';
-
-  if (type === 'Single') {
-    client.on('serverDescriptionChanged', ev => {
-      const newDescription = ev.newDescription;
-      if (newDescription.type === 'Unknown') {
-        conn.readyState = STATES.disconnected;
-      } else {
-        _handleReconnect();
-      }
-    });
-  } else if (type.startsWith('ReplicaSet')) {
-    client.on('topologyDescriptionChanged', ev => {
-      // Emit disconnected if we've lost connectivity to the primary
-      const description = ev.newDescription;
-      if (conn.readyState === STATES.connected && description.type !== 'ReplicaSetWithPrimary') {
-        // Implicitly emits 'disconnected'
-        conn.readyState = STATES.disconnected;
-      } else if (conn.readyState === STATES.disconnected && description.type === 'ReplicaSetWithPrimary') {
-        _handleReconnect();
-      }
-    });
-  }
-
-  conn._lastHeartbeatAt = null;
-
-  client.on('serverHeartbeatSucceeded', () => {
-    conn._lastHeartbeatAt = Date.now();
-    for (const otherDb of conn.otherDbs) {
-      otherDb._lastHeartbeatAt = conn._lastHeartbeatAt;
-    }
-  });
-
-  if (options.monitorCommands) {
-    client.on('commandStarted', (data) => conn.emit('commandStarted', data));
-    client.on('commandFailed', (data) => conn.emit('commandFailed', data));
-    client.on('commandSucceeded', (data) => conn.emit('commandSucceeded', data));
-  }
-
-  conn.onOpen();
-
-  for (const i in conn.collections) {
-    if (Object.hasOwn(conn.collections, i)) {
-      conn.collections[i].onOpen();
-    }
-  }
+    return (0, utils_1.uuidV4)().toString('hex');
 }
-
-/*!
- * Module exports.
- */
-
-module.exports = NativeConnection;
+/** @internal */
+class Connection extends mongo_types_1.TypedEventEmitter {
+    constructor(stream, options) {
+        super();
+        this.lastHelloMS = -1;
+        this.helloOk = false;
+        this.delayedTimeoutId = null;
+        /** Indicates that the connection (including underlying TCP socket) has been closed. */
+        this.closed = false;
+        this.clusterTime = null;
+        this.error = null;
+        this.dataEvents = null;
+        this.on('error', utils_1.noop);
+        this.socket = stream;
+        this.id = options.id;
+        this.address = streamIdentifier(stream, options);
+        this.socketTimeoutMS = options.socketTimeoutMS ?? 0;
+        this.monitorCommands = options.monitorCommands;
+        this.serverApi = options.serverApi;
+        this.mongoLogger = options.mongoLogger;
+        this.established = false;
+        this.description = new stream_description_1.StreamDescription(this.address, options);
+        this.generation = options.generation;
+        this.lastUseTime = (0, utils_1.now)();
+        this.messageStream = this.socket
+            .on('error', this.onSocketError.bind(this))
+            .pipe(new SizedMessageTransform({ connection: this }))
+            .on('error', this.onTransformError.bind(this));
+        this.socket.on('close', this.onClose.bind(this));
+        this.socket.on('timeout', this.onTimeout.bind(this));
+        this.messageStream.pause();
+    }
+    get hello() {
+        return this.description.hello;
+    }
+    // the `connect` method stores the result of the handshake hello on the connection
+    set hello(response) {
+        this.description.receiveResponse(response);
+        Object.freeze(this.description);
+    }
+    get serviceId() {
+        return this.hello?.serviceId;
+    }
+    get loadBalanced() {
+        return this.description.loadBalanced;
+    }
+    get idleTime() {
+        return (0, utils_1.calculateDurationInMs)(this.lastUseTime);
+    }
+    get hasSessionSupport() {
+        return this.description.logicalSessionTimeoutMinutes != null;
+    }
+    get supportsOpMsg() {
+        return (this.description != null &&
+            // TODO(NODE-6672,NODE-6287): This guard is primarily for maxWireVersion = 0
+            (0, utils_1.maxWireVersion)(this) >= 6 &&
+            !this.description.__nodejs_mock_server__);
+    }
+    get shouldEmitAndLogCommand() {
+        return ((this.monitorCommands ||
+            (this.established &&
+                !this.authContext?.reauthenticating &&
+                this.mongoLogger?.willLog(mongo_logger_1.MongoLoggableComponent.COMMAND, mongo_logger_1.SeverityLevel.DEBUG))) ??
+            false);
+    }
+    markAvailable() {
+        this.lastUseTime = (0, utils_1.now)();
+    }
+    onSocketError(cause) {
+        this.onError(new error_1.MongoNetworkError(cause.message, { cause }));
+    }
+    onTransformError(error) {
+        this.onError(error);
+    }
+    onError(error) {
+        this.cleanup(error);
+    }
+    onClose() {
+        const message = `connection ${this.id} to ${this.address} closed`;
+        this.cleanup(new error_1.MongoNetworkError(message));
+    }
+    onTimeout() {
+        this.delayedTimeoutId = (0, timers_1.setTimeout)(() => {
+            const message = `connection ${this.id} to ${this.address} timed out`;
+            const beforeHandshake = this.hello == null;
+            this.cleanup(new error_1.MongoNetworkTimeoutError(message, { beforeHandshake }));
+        }, 1).unref(); // No need for this timer to hold the event loop open
+    }
+    destroy() {
+        if (this.closed) {
+            return;
+        }
+        // load balanced mode requires that these listeners remain on the connection
+        // after cleanup on timeouts, errors or close so we remove them before calling
+        // cleanup.
+        this.removeAllListeners(Connection.PINNED);
+        this.removeAllListeners(Connection.UNPINNED);
+        const message = `connection ${this.id} to ${this.address} closed`;
+        this.cleanup(new error_1.MongoNetworkError(message));
+    }
+    /**
+     * A method that cleans up the connection.  When `force` is true, this method
+     * forcibly destroys the socket.
+     *
+     * If an error is provided, any in-flight operations will be closed with the error.
+     *
+     * This method does nothing if the connection is already closed.
+     */
+    cleanup(error) {
+        if (this.closed) {
+            return;
+        }
+        this.socket.destroy();
+        this.error = error;
+        this.dataEvents?.throw(error).then(undefined, utils_1.squashError);
+        this.closed = true;
+        this.emit(Connection.CLOSE);
+    }
+    prepareCommand(db, command, options) {
+        let cmd = { ...command };
+        const readPreference = (0, shared_1.getReadPreference)(options);
+        const session = options?.session;
+        let clusterTime = this.clusterTime;
+        if (this.serverApi) {
+            const { version, strict, deprecationErrors } = this.serverApi;
+            cmd.apiVersion = version;
+            if (strict != null)
+                cmd.apiStrict = strict;
+            if (deprecationErrors != null)
+                cmd.apiDeprecationErrors = deprecationErrors;
+        }
+        if (this.hasSessionSupport && session) {
+            if (session.clusterTime &&
+                clusterTime &&
+                session.clusterTime.clusterTime.greaterThan(clusterTime.clusterTime)) {
+                clusterTime = session.clusterTime;
+            }
+            const sessionError = (0, sessions_1.applySession)(session, cmd, options);
+            if (sessionError)
+                throw sessionError;
+        }
+        else if (session?.explicit) {
+            throw new error_1.MongoCompatibilityError('Current topology does not support sessions');
+        }
+        // if we have a known cluster time, gossip it
+        if (clusterTime) {
+            cmd.$clusterTime = clusterTime;
+        }
+        // For standalone, drivers MUST NOT set $readPreference.
+        if (this.description.type !== common_1.ServerType.Standalone) {
+            if (!(0, shared_1.isSharded)(this) &&
+                !this.description.loadBalanced &&
+                this.supportsOpMsg &&
+                options.directConnection === true &&
+                readPreference?.mode === 'primary') {
+                // For mongos and load balancers with 'primary' mode, drivers MUST NOT set $readPreference.
+                // For all other types with a direct connection, if the read preference is 'primary'
+                // (driver sets 'primary' as default if no read preference is configured),
+                // the $readPreference MUST be set to 'primaryPreferred'
+                // to ensure that any server type can handle the request.
+                cmd.$readPreference = read_preference_1.ReadPreference.primaryPreferred.toJSON();
+            }
+            else if ((0, shared_1.isSharded)(this) && !this.supportsOpMsg && readPreference?.mode !== 'primary') {
+                // When sending a read operation via OP_QUERY and the $readPreference modifier,
+                // the query MUST be provided using the $query modifier.
+                cmd = {
+                    $query: cmd,
+                    $readPreference: readPreference.toJSON()
+                };
+            }
+            else if (readPreference?.mode !== 'primary') {
+                // For mode 'primary', drivers MUST NOT set $readPreference.
+                // For all other read preference modes (i.e. 'secondary', 'primaryPreferred', ...),
+                // drivers MUST set $readPreference
+                cmd.$readPreference = readPreference.toJSON();
+            }
+        }
+        const commandOptions = {
+            numberToSkip: 0,
+            numberToReturn: -1,
+            checkKeys: false,
+            // This value is not overridable
+            secondaryOk: readPreference.secondaryOk(),
+            ...options
+        };
+        options.timeoutContext?.addMaxTimeMSToCommand(cmd, options);
+        const message = this.supportsOpMsg
+            ? new commands_1.OpMsgRequest(db, cmd, commandOptions)
+            : new commands_1.OpQueryRequest(db, cmd, commandOptions);
+        return message;
+    }
+    async *sendWire(message, options, responseType) {
+        this.throwIfAborted();
+        const timeout = options.socketTimeoutMS ??
+            options?.timeoutContext?.getSocketTimeoutMS() ??
+            this.socketTimeoutMS;
+        this.socket.setTimeout(timeout);
+        try {
+            await this.writeCommand(message, {
+                agreedCompressor: this.description.compressor ?? 'none',
+                zlibCompressionLevel: this.description.zlibCompressionLevel,
+                timeoutContext: options.timeoutContext,
+                signal: options.signal
+            });
+            if (options.noResponse || message.moreToCome) {
+                yield responses_1.MongoDBResponse.empty;
+                return;
+            }
+            this.throwIfAborted();
+            if (options.timeoutContext?.csotEnabled() &&
+                options.timeoutContext.minRoundTripTime != null &&
+                options.timeoutContext.remainingTimeMS < options.timeoutContext.minRoundTripTime) {
+                throw new error_1.MongoOperationTimeoutError('Server roundtrip time is greater than the time remaining');
+            }
+            for await (const response of this.readMany(options)) {
+                this.socket.setTimeout(0);
+                const bson = response.parse();
+                const document = (responseType ?? responses_1.MongoDBResponse).make(bson);
+                yield document;
+                this.throwIfAborted();
+                this.socket.setTimeout(timeout);
+            }
+        }
+        finally {
+            this.socket.setTimeout(0);
+        }
+    }
+    async *sendCommand(ns, command, options, responseType) {
+        options?.signal?.throwIfAborted();
+        const message = this.prepareCommand(ns.db, command, options);
+        let started = 0;
+        if (this.shouldEmitAndLogCommand) {
+            started = (0, utils_1.now)();
+            this.emitAndLogCommand(this.monitorCommands, Connection.COMMAND_STARTED, message.databaseName, this.established, new command_monitoring_events_1.CommandStartedEvent(this, message, this.description.serverConnectionId));
+        }
+        // If `documentsReturnedIn` not set or raw is not enabled, use input bson options
+        // Otherwise, support raw flag. Raw only works for cursors that hardcode firstBatch/nextBatch fields
+        const bsonOptions = options.documentsReturnedIn == null || !options.raw
+            ? options
+            : {
+                ...options,
+                raw: false,
+                fieldsAsRaw: { [options.documentsReturnedIn]: true }
+            };
+        /** MongoDBResponse instance or subclass */
+        let document = undefined;
+        /** Cached result of a toObject call */
+        let object = undefined;
+        try {
+            this.throwIfAborted();
+            for await (document of this.sendWire(message, options, responseType)) {
+                object = undefined;
+                if (options.session != null) {
+                    (0, sessions_1.updateSessionFromResponse)(options.session, document);
+                }
+                if (document.$clusterTime) {
+                    this.clusterTime = document.$clusterTime;
+                    this.emit(Connection.CLUSTER_TIME_RECEIVED, document.$clusterTime);
+                }
+                if (document.ok === 0) {
+                    if (options.timeoutContext?.csotEnabled() && document.isMaxTimeExpiredError) {
+                        throw new error_1.MongoOperationTimeoutError('Server reported a timeout error', {
+                            cause: new error_1.MongoServerError((object ??= document.toObject(bsonOptions)))
+                        });
+                    }
+                    throw new error_1.MongoServerError((object ??= document.toObject(bsonOptions)));
+                }
+                if (this.shouldEmitAndLogCommand) {
+                    this.emitAndLogCommand(this.monitorCommands, Connection.COMMAND_SUCCEEDED, message.databaseName, this.established, new command_monitoring_events_1.CommandSucceededEvent(this, message, options.noResponse
+                        ? undefined
+                        : message.moreToCome
+                            ? { ok: 1 }
+                            : (object ??= document.toObject(bsonOptions)), started, this.description.serverConnectionId));
+                }
+                if (responseType == null) {
+                    yield (object ??= document.toObject(bsonOptions));
+                }
+                else {
+                    yield document;
+                }
+                this.throwIfAborted();
+            }
+        }
+        catch (error) {
+            if (this.shouldEmitAndLogCommand) {
+                this.emitAndLogCommand(this.monitorCommands, Connection.COMMAND_FAILED, message.databaseName, this.established, new command_monitoring_events_1.CommandFailedEvent(this, message, error, started, this.description.serverConnectionId));
+            }
+            throw error;
+        }
+    }
+    async command(ns, command, options = {}, responseType) {
+        this.throwIfAborted();
+        options.signal?.throwIfAborted();
+        for await (const document of this.sendCommand(ns, command, options, responseType)) {
+            if (options.timeoutContext?.csotEnabled()) {
+                if (responses_1.MongoDBResponse.is(document)) {
+                    if (document.isMaxTimeExpiredError) {
+                        throw new error_1.MongoOperationTimeoutError('Server reported a timeout error', {
+                            cause: new error_1.MongoServerError(document.toObject())
+                        });
+                    }
+                }
+                else {
+                    if ((Array.isArray(document?.writeErrors) &&
+                        document.writeErrors.some(error => error?.code === error_1.MONGODB_ERROR_CODES.MaxTimeMSExpired)) ||
+                        document?.writeConcernError?.code === error_1.MONGODB_ERROR_CODES.MaxTimeMSExpired) {
+                        throw new error_1.MongoOperationTimeoutError('Server reported a timeout error', {
+                            cause: new error_1.MongoServerError(document)
+                        });
+                    }
+                }
+            }
+            return document;
+        }
+        throw new error_1.MongoUnexpectedServerResponseError('Unable to get response from server');
+    }
+    exhaustCommand(ns, command, options, replyListener) {
+        const exhaustLoop = async () => {
+            this.throwIfAborted();
+            for await (const reply of this.sendCommand(ns, command, options)) {
+                replyListener(undefined, reply);
+                this.throwIfAborted();
+            }
+            throw new error_1.MongoUnexpectedServerResponseError('Server ended moreToCome unexpectedly');
+        };
+        exhaustLoop().then(undefined, replyListener);
+    }
+    throwIfAborted() {
+        if (this.error)
+            throw this.error;
+    }
+    /**
+     * @internal
+     *
+     * Writes an OP_MSG or OP_QUERY request to the socket, optionally compressing the command. This method
+     * waits until the socket's buffer has emptied (the Nodejs socket `drain` event has fired).
+     */
+    async writeCommand(command, options) {
+        const finalCommand = options.agreedCompressor === 'none' || !commands_1.OpCompressedRequest.canCompress(command)
+            ? command
+            : new commands_1.OpCompressedRequest(command, {
+                agreedCompressor: options.agreedCompressor ?? 'none',
+                zlibCompressionLevel: options.zlibCompressionLevel ?? 0
+            });
+        const buffer = Buffer.concat(await finalCommand.toBin());
+        if (options.timeoutContext?.csotEnabled()) {
+            if (options.timeoutContext.minRoundTripTime != null &&
+                options.timeoutContext.remainingTimeMS < options.timeoutContext.minRoundTripTime) {
+                throw new error_1.MongoOperationTimeoutError('Server roundtrip time is greater than the time remaining');
+            }
+        }
+        if (this.socket.write(buffer))
+            return;
+        const drainEvent = (0, utils_1.once)(this.socket, 'drain', options);
+        const timeout = options?.timeoutContext?.timeoutForSocketWrite;
+        const drained = timeout ? Promise.race([drainEvent, timeout]) : drainEvent;
+        try {
+            return await drained;
+        }
+        catch (writeError) {
+            if (timeout_1.TimeoutError.is(writeError)) {
+                const timeoutError = new error_1.MongoOperationTimeoutError('Timed out at socket write');
+                this.onError(timeoutError);
+                throw timeoutError;
+            }
+            else if (writeError === options.signal?.reason) {
+                this.onError(writeError);
+            }
+            throw writeError;
+        }
+        finally {
+            timeout?.clear();
+        }
+    }
+    /**
+     * @internal
+     *
+     * Returns an async generator that yields full wire protocol messages from the underlying socket.  This function
+     * yields messages until `moreToCome` is false or not present in a response, or the caller cancels the request
+     * by calling `return` on the generator.
+     *
+     * Note that `for-await` loops call `return` automatically when the loop is exited.
+     */
+    async *readMany(options) {
+        try {
+            this.dataEvents = (0, on_data_1.onData)(this.messageStream, options);
+            this.messageStream.resume();
+            for await (const message of this.dataEvents) {
+                const response = await (0, compression_1.decompressResponse)(message);
+                yield response;
+                if (!response.moreToCome) {
+                    return;
+                }
+            }
+        }
+        catch (readError) {
+            if (timeout_1.TimeoutError.is(readError)) {
+                const timeoutError = new error_1.MongoOperationTimeoutError(`Timed out during socket read (${readError.duration}ms)`);
+                this.dataEvents = null;
+                this.onError(timeoutError);
+                throw timeoutError;
+            }
+            else if (readError === options.signal?.reason) {
+                this.onError(readError);
+            }
+            throw readError;
+        }
+        finally {
+            this.dataEvents = null;
+            this.messageStream.pause();
+        }
+    }
+}
+exports.Connection = Connection;
+/** @event */
+Connection.COMMAND_STARTED = constants_1.COMMAND_STARTED;
+/** @event */
+Connection.COMMAND_SUCCEEDED = constants_1.COMMAND_SUCCEEDED;
+/** @event */
+Connection.COMMAND_FAILED = constants_1.COMMAND_FAILED;
+/** @event */
+Connection.CLUSTER_TIME_RECEIVED = constants_1.CLUSTER_TIME_RECEIVED;
+/** @event */
+Connection.CLOSE = constants_1.CLOSE;
+/** @event */
+Connection.PINNED = constants_1.PINNED;
+/** @event */
+Connection.UNPINNED = constants_1.UNPINNED;
+/** @internal */
+class SizedMessageTransform extends stream_1.Transform {
+    constructor({ connection }) {
+        super({ writableObjectMode: false, readableObjectMode: true });
+        this.bufferPool = new utils_1.BufferPool();
+        this.connection = connection;
+    }
+    _transform(chunk, encoding, callback) {
+        if (this.connection.delayedTimeoutId != null) {
+            (0, timers_1.clearTimeout)(this.connection.delayedTimeoutId);
+            this.connection.delayedTimeoutId = null;
+        }
+        this.bufferPool.append(chunk);
+        while (this.bufferPool.length) {
+            // While there are any bytes in the buffer
+            // Try to fetch a size from the top 4 bytes
+            const sizeOfMessage = this.bufferPool.getInt32();
+            if (sizeOfMessage == null) {
+                // Not even an int32 worth of data. Stop the loop, we need more chunks.
+                break;
+            }
+            if (sizeOfMessage < 0) {
+                // The size in the message has a negative value, this is probably corruption, throw:
+                return callback(new error_1.MongoParseError(`Message size cannot be negative: ${sizeOfMessage}`));
+            }
+            if (sizeOfMessage > this.bufferPool.length) {
+                // We do not have enough bytes to make a sizeOfMessage chunk
+                break;
+            }
+            // Add a message to the stream
+            const message = this.bufferPool.read(sizeOfMessage);
+            if (!this.push(message)) {
+                // We only subscribe to data events so we should never get backpressure
+                // if we do, we do not have the handling for it.
+                return callback(new error_1.MongoRuntimeError(`SizedMessageTransform does not support backpressure`));
+            }
+        }
+        callback();
+    }
+}
+exports.SizedMessageTransform = SizedMessageTransform;
+/** @internal */
+class CryptoConnection extends Connection {
+    constructor(stream, options) {
+        super(stream, options);
+        this.autoEncrypter = options.autoEncrypter;
+    }
+    async command(ns, cmd, options, responseType) {
+        const { autoEncrypter } = this;
+        if (!autoEncrypter) {
+            // TODO(NODE-6065): throw a MongoRuntimeError in Node V7
+            // @ts-expect-error No cause provided because there is no underlying error.
+            throw new error_1.MongoMissingDependencyError('No AutoEncrypter available for encryption', {
+                dependencyName: 'n/a'
+            });
+        }
+        const serverWireVersion = (0, utils_1.maxWireVersion)(this);
+        if (serverWireVersion === 0) {
+            // This means the initial handshake hasn't happened yet
+            return await super.command(ns, cmd, options, responseType);
+        }
+        // Save sort or indexKeys based on the command being run
+        // the encrypt API serializes our JS objects to BSON to pass to the native code layer
+        // and then deserializes the encrypted result, the protocol level components
+        // of the command (ex. sort) are then converted to JS objects potentially losing
+        // import key order information. These fields are never encrypted so we can save the values
+        // from before the encryption and replace them after encryption has been performed
+        const sort = cmd.find || cmd.findAndModify ? cmd.sort : null;
+        const indexKeys = cmd.createIndexes
+            ? cmd.indexes.map((index) => index.key)
+            : null;
+        const encrypted = await autoEncrypter.encrypt(ns.toString(), cmd, options);
+        // Replace the saved values
+        if (sort != null && (cmd.find || cmd.findAndModify)) {
+            encrypted.sort = sort;
+        }
+        if (indexKeys != null && cmd.createIndexes) {
+            for (const [offset, index] of indexKeys.entries()) {
+                // @ts-expect-error `encrypted` is a generic "command", but we've narrowed for only `createIndexes` commands here
+                encrypted.indexes[offset].key = index;
+            }
+        }
+        const encryptedResponse = await super.command(ns, encrypted, options, 
+        // Eventually we want to require `responseType` which means we would satisfy `T` as the return type.
+        // In the meantime, we want encryptedResponse to always be _at least_ a MongoDBResponse if not a more specific subclass
+        // So that we can ensure we have access to the on-demand APIs for decorate response
+        responseType ?? responses_1.MongoDBResponse);
+        const result = await autoEncrypter.decrypt(encryptedResponse.toBytes(), options);
+        const decryptedResponse = responseType?.make(result) ?? (0, bson_1.deserialize)(result, options);
+        if (autoEncrypter[constants_1.kDecorateResult]) {
+            if (responseType == null) {
+                (0, utils_1.decorateDecryptionResult)(decryptedResponse, encryptedResponse.toObject(), true);
+            }
+            else if (decryptedResponse instanceof responses_1.CursorResponse) {
+                decryptedResponse.encryptedResponse = encryptedResponse;
+            }
+        }
+        return decryptedResponse;
+    }
+}
+exports.CryptoConnection = CryptoConnection;
+//# sourceMappingURL=connection.js.map
