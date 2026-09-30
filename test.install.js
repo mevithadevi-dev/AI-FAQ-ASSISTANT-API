@@ -1,4 +1,3 @@
-"use strict";
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,50 +11,46 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const assert_1 = __importDefault(require("assert"));
-const child_process_1 = require("child_process");
-const fs_1 = __importDefault(require("fs"));
-const mv_1 = __importDefault(require("mv"));
-const ncp_1 = __importDefault(require("ncp"));
-const path_1 = __importDefault(require("path"));
-const tmp_1 = __importDefault(require("tmp"));
-const util_1 = require("util");
-const mocha_1 = require("mocha");
-const pack_n_play_1 = require("pack-n-play");
-const node_http_1 = require("node:http");
-const util_cjs_1 = __importDefault(require("../src/util.cjs"));
+import assert from 'assert';
+import { execFile } from 'child_process';
+import fs from 'fs';
+import mv from 'mv';
+import ncp from 'ncp';
+import path from 'path';
+import tmp from 'tmp';
+import { promisify } from 'util';
+import { describe, it, before, after } from 'mocha';
+import { packNTest } from 'pack-n-play';
+import { createServer } from 'node:http';
+import util from '../src/util.cjs';
 /**
  * Optionally keep the staging directory between tests.
  */
 const KEEP_STAGING_DIRECTORY = false;
-const mvp = (0, util_1.promisify)(mv_1.default);
-const ncpp = (0, util_1.promisify)(ncp_1.default);
-const pkg = util_cjs_1.default.pkg;
-const exec = (0, util_1.promisify)(child_process_1.execFile);
-(0, mocha_1.describe)('📦 pack and install', () => {
+const mvp = promisify(mv);
+const ncpp = promisify(ncp);
+const pkg = util.pkg;
+const exec = promisify(execFile);
+describe('📦 pack and install', () => {
     let stagingDir;
     let stagingPath;
-    (0, mocha_1.before)(() => {
-        stagingDir = tmp_1.default.dirSync({
+    before(() => {
+        stagingDir = tmp.dirSync({
             keep: KEEP_STAGING_DIRECTORY,
             unsafeCleanup: true,
         });
         stagingPath = stagingDir.name;
     });
-    (0, mocha_1.after)('cleanup staging', () => {
+    after('cleanup staging', () => {
         if (!KEEP_STAGING_DIRECTORY) {
             stagingDir.removeCallback();
         }
     });
-    (0, mocha_1.describe)('pack-n-play', () => {
+    describe('pack-n-play', () => {
         let server;
         let url;
-        (0, mocha_1.before)(async () => {
-            server = (0, node_http_1.createServer)((req, res) => {
+        before(async () => {
+            server = createServer((req, res) => {
                 res.writeHead(200, { 'content-type': 'text/plain' });
                 res.end(`Hello, ${req.headers['user-agent'] || 'World'}`);
             });
@@ -74,11 +69,11 @@ const exec = (0, util_1.promisify)(child_process_1.execFile);
                 url = base.toString();
             }
         });
-        (0, mocha_1.after)(() => {
+        after(() => {
             server.close();
         });
-        (0, mocha_1.it)('supports ESM', async () => {
-            await (0, pack_n_play_1.packNTest)({
+        it('supports ESM', async () => {
+            await packNTest({
                 sample: {
                     description: 'import as ESM',
                     esm: `
@@ -90,8 +85,8 @@ const exec = (0, util_1.promisify)(child_process_1.execFile);
                 },
             });
         });
-        (0, mocha_1.it)('supports CJS', async () => {
-            await (0, pack_n_play_1.packNTest)({
+        it('supports CJS', async () => {
+            await packNTest({
                 sample: {
                     description: 'require as CJS',
                     cjs: `
@@ -104,24 +99,24 @@ const exec = (0, util_1.promisify)(child_process_1.execFile);
             });
         });
     });
-    (0, mocha_1.describe)('webpack', () => {
+    describe('webpack', () => {
         /**
          * Create a staging directory with temp fixtures used to test on a fresh
          * application.
          */
-        (0, mocha_1.before)('pack and install', async () => {
+        before('pack and install', async () => {
             await exec('npm', ['pack']);
             const tarball = `${pkg.name}-${pkg.version}.tgz`;
             await mvp(tarball, `${stagingPath}/gaxios.tgz`);
             await ncpp('system-test/fixtures/sample', `${stagingPath}/`);
             await exec('npm', ['install'], { cwd: `${stagingPath}/` });
         });
-        (0, mocha_1.it)('should be able to webpack the library', async () => {
+        it('should be able to webpack the library', async () => {
             // we expect npm install is executed in the before hook
             await exec('npx', ['webpack'], { cwd: `${stagingPath}/` });
-            const bundle = path_1.default.join(stagingPath, 'dist', 'bundle.min.js');
-            const stat = fs_1.default.statSync(bundle);
-            (0, assert_1.default)(stat.size < 256 * 1024);
+            const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
+            const stat = fs.statSync(bundle);
+            assert(stat.size < 256 * 1024);
         }).timeout(20000);
     });
 });

@@ -1,4 +1,3 @@
-"use strict";
 // Copyright 2024 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +10,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GaxiosInterceptorManager = void 0;
 /**
  * Class to manage collections of GaxiosInterceptors for both requests and responses.
  */
-class GaxiosInterceptorManager extends Set {
+export class GaxiosInterceptorManager extends Set {
 }
-exports.GaxiosInterceptorManager = GaxiosInterceptorManager;
 //# sourceMappingURL=interceptor.js.map

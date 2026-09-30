@@ -1,4 +1,3 @@
-"use strict";
 // Copyright 2018 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRetryConfig = getRetryConfig;
-async function getRetryConfig(err) {
+export async function getRetryConfig(err) {
     let config = getConfig(err);
     if (!err || !err.config || (!config && !err.config.retry)) {
         return { shouldRetry: false };
