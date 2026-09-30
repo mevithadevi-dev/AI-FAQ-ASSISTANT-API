@@ -1,362 +1,136 @@
-
-2.6.9 / 2017-09-22
-==================
-
-  * remove ReDoS regexp in %o formatter (#504)
-
-2.6.8 / 2017-05-18
-==================
-
-  * Fix: Check for undefined on browser globals (#462, @marbemac)
-
-2.6.7 / 2017-05-16
-==================
-
-  * Fix: Update ms to 2.0.0 to fix regular expression denial of service vulnerability (#458, @hubdotcom)
-  * Fix: Inline extend function in node implementation (#452, @dougwilson)
-  * Docs: Fix typo (#455, @msasad)
-
-2.6.5 / 2017-04-27
-==================
-  
-  * Fix: null reference check on window.documentElement.style.WebkitAppearance (#447, @thebigredgeek)
-  * Misc: clean up browser reference checks (#447, @thebigredgeek)
-  * Misc: add npm-debug.log to .gitignore (@thebigredgeek)
-
-
-2.6.4 / 2017-04-20
-==================
-
-  * Fix: bug that would occure if process.env.DEBUG is a non-string value. (#444, @LucianBuzzo)
-  * Chore: ignore bower.json in npm installations. (#437, @joaovieira)
-  * Misc: update "ms" to v0.7.3 (@tootallnate)
-
-2.6.3 / 2017-03-13
-==================
-
-  * Fix: Electron reference to `process.env.DEBUG` (#431, @paulcbetts)
-  * Docs: Changelog fix (@thebigredgeek)
-
-2.6.2 / 2017-03-10
-==================
-
-  * Fix: DEBUG_MAX_ARRAY_LENGTH (#420, @slavaGanzin)
-  * Docs: Add backers and sponsors from Open Collective (#422, @piamancini)
-  * Docs: Add Slackin invite badge (@tootallnate)
-
-2.6.1 / 2017-02-10
-==================
-
-  * Fix: Module's `export default` syntax fix for IE8 `Expected identifier` error
-  * Fix: Whitelist DEBUG_FD for values 1 and 2 only (#415, @pi0)
-  * Fix: IE8 "Expected identifier" error (#414, @vgoma)
-  * Fix: Namespaces would not disable once enabled (#409, @musikov)
-
-2.6.0 / 2016-12-28
-==================
-
-  * Fix: added better null pointer checks for browser useColors (@thebigredgeek)
-  * Improvement: removed explicit `window.debug` export (#404, @tootallnate)
-  * Improvement: deprecated `DEBUG_FD` environment variable (#405, @tootallnate)
-
-2.5.2 / 2016-12-25
-==================
-
-  * Fix: reference error on window within webworkers (#393, @KlausTrainer)
-  * Docs: fixed README typo (#391, @lurch)
-  * Docs: added notice about v3 api discussion (@thebigredgeek)
-
-2.5.1 / 2016-12-20
-==================
-
-  * Fix: babel-core compatibility
-
-2.5.0 / 2016-12-20
-==================
-
-  * Fix: wrong reference in bower file (@thebigredgeek)
-  * Fix: webworker compatibility (@thebigredgeek)
-  * Fix: output formatting issue (#388, @kribblo)
-  * Fix: babel-loader compatibility (#383, @escwald)
-  * Misc: removed built asset from repo and publications (@thebigredgeek)
-  * Misc: moved source files to /src (#378, @yamikuronue)
-  * Test: added karma integration and replaced babel with browserify for browser tests (#378, @yamikuronue)
-  * Test: coveralls integration (#378, @yamikuronue)
-  * Docs: simplified language in the opening paragraph (#373, @yamikuronue)
-
-2.4.5 / 2016-12-17
-==================
-
-  * Fix: `navigator` undefined in Rhino (#376, @jochenberger)
-  * Fix: custom log function (#379, @hsiliev)
-  * Improvement: bit of cleanup + linting fixes (@thebigredgeek)
-  * Improvement: rm non-maintainted `dist/` dir (#375, @freewil)
-  * Docs: simplified language in the opening paragraph. (#373, @yamikuronue)
-
-2.4.4 / 2016-12-14
-==================
-
-  * Fix: work around debug being loaded in preload scripts for electron (#368, @paulcbetts)
-
-2.4.3 / 2016-12-14
-==================
-
-  * Fix: navigation.userAgent error for react native (#364, @escwald)
-
-2.4.2 / 2016-12-14
-==================
-
-  * Fix: browser colors (#367, @tootallnate)
-  * Misc: travis ci integration (@thebigredgeek)
-  * Misc: added linting and testing boilerplate with sanity check (@thebigredgeek)
-
-2.4.1 / 2016-12-13
-==================
-
-  * Fix: typo that broke the package (#356)
-
-2.4.0 / 2016-12-13
-==================
-
-  * Fix: bower.json references unbuilt src entry point (#342, @justmatt)
-  * Fix: revert "handle regex special characters" (@tootallnate)
-  * Feature: configurable util.inspect()`options for NodeJS (#327, @tootallnate)
-  * Feature: %O`(big O) pretty-prints objects (#322, @tootallnate)
-  * Improvement: allow colors in workers (#335, @botverse)
-  * Improvement: use same color for same namespace. (#338, @lchenay)
-
-2.3.3 / 2016-11-09
-==================
-
-  * Fix: Catch `JSON.stringify()` errors (#195, Jovan Alleyne)
-  * Fix: Returning `localStorage` saved values (#331, Levi Thomason)
-  * Improvement: Don't create an empty object when no `process` (Nathan Rajlich)
-
-2.3.2 / 2016-11-09
-==================
-
-  * Fix: be super-safe in index.js as well (@TooTallNate)
-  * Fix: should check whether process exists (Tom Newby)
-
-2.3.1 / 2016-11-09
-==================
-
-  * Fix: Added electron compatibility (#324, @paulcbetts)
-  * Improvement: Added performance optimizations (@tootallnate)
-  * Readme: Corrected PowerShell environment variable example (#252, @gimre)
-  * Misc: Removed yarn lock file from source control (#321, @fengmk2)
-
-2.3.0 / 2016-11-07
-==================
-
-  * Fix: Consistent placement of ms diff at end of output (#215, @gorangajic)
-  * Fix: Escaping of regex special characters in namespace strings (#250, @zacronos)
-  * Fix: Fixed bug causing crash on react-native (#282, @vkarpov15)
-  * Feature: Enabled ES6+ compatible import via default export (#212 @bucaran)
-  * Feature: Added %O formatter to reflect Chrome's console.log capability (#279, @oncletom)
-  * Package: Update "ms" to 0.7.2 (#315, @DevSide)
-  * Package: removed superfluous version property from bower.json (#207 @kkirsche)
-  * Readme: fix USE_COLORS to DEBUG_COLORS
-  * Readme: Doc fixes for format string sugar (#269, @mlucool)
-  * Readme: Updated docs for DEBUG_FD and DEBUG_COLORS environment variables (#232, @mattlyons0)
-  * Readme: doc fixes for PowerShell (#271 #243, @exoticknight @unreadable)
-  * Readme: better docs for browser support (#224, @matthewmueller)
-  * Tooling: Added yarn integration for development (#317, @thebigredgeek)
-  * Misc: Renamed History.md to CHANGELOG.md (@thebigredgeek)
-  * Misc: Added license file (#226 #274, @CantemoInternal @sdaitzman)
-  * Misc: Updated contributors (@thebigredgeek)
-
-2.2.0 / 2015-05-09
-==================
-
-  * package: update "ms" to v0.7.1 (#202, @dougwilson)
-  * README: add logging to file example (#193, @DanielOchoa)
-  * README: fixed a typo (#191, @amir-s)
-  * browser: expose `storage` (#190, @stephenmathieson)
-  * Makefile: add a `distclean` target (#189, @stephenmathieson)
-
-2.1.3 / 2015-03-13
-==================
-
-  * Updated stdout/stderr example (#186)
-  * Updated example/stdout.js to match debug current behaviour
-  * Renamed example/stderr.js to stdout.js
-  * Update Readme.md (#184)
-  * replace high intensity foreground color for bold (#182, #183)
-
-2.1.2 / 2015-03-01
-==================
-
-  * dist: recompile
-  * update "ms" to v0.7.0
-  * package: update "browserify" to v9.0.3
-  * component: fix "ms.js" repo location
-  * changed bower package name
-  * updated documentation about using debug in a browser
-  * fix: security error on safari (#167, #168, @yields)
-
-2.1.1 / 2014-12-29
-==================
-
-  * browser: use `typeof` to check for `console` existence
-  * browser: check for `console.log` truthiness (fix IE 8/9)
-  * browser: add support for Chrome apps
-  * Readme: added Windows usage remarks
-  * Add `bower.json` to properly support bower install
-
-2.1.0 / 2014-10-15
-==================
-
-  * node: implement `DEBUG_FD` env variable support
-  * package: update "browserify" to v6.1.0
-  * package: add "license" field to package.json (#135, @panuhorsmalahti)
-
-2.0.0 / 2014-09-01
-==================
-
-  * package: update "browserify" to v5.11.0
-  * node: use stderr rather than stdout for logging (#29, @stephenmathieson)
-
-1.0.4 / 2014-07-15
-==================
-
-  * dist: recompile
-  * example: remove `console.info()` log usage
-  * example: add "Content-Type" UTF-8 header to browser example
-  * browser: place %c marker after the space character
-  * browser: reset the "content" color via `color: inherit`
-  * browser: add colors support for Firefox >= v31
-  * debug: prefer an instance `log()` function over the global one (#119)
-  * Readme: update documentation about styled console logs for FF v31 (#116, @wryk)
-
-1.0.3 / 2014-07-09
-==================
-
-  * Add support for multiple wildcards in namespaces (#122, @seegno)
-  * browser: fix lint
-
-1.0.2 / 2014-06-10
-==================
-
-  * browser: update color palette (#113, @gscottolson)
-  * common: make console logging function configurable (#108, @timoxley)
-  * node: fix %o colors on old node <= 0.8.x
-  * Makefile: find node path using shell/which (#109, @timoxley)
-
-1.0.1 / 2014-06-06
-==================
-
-  * browser: use `removeItem()` to clear localStorage
-  * browser, node: don't set DEBUG if namespaces is undefined (#107, @leedm777)
-  * package: add "contributors" section
-  * node: fix comment typo
-  * README: list authors
-
-1.0.0 / 2014-06-04
-==================
-
-  * make ms diff be global, not be scope
-  * debug: ignore empty strings in enable()
-  * node: make DEBUG_COLORS able to disable coloring
-  * *: export the `colors` array
-  * npmignore: don't publish the `dist` dir
-  * Makefile: refactor to use browserify
-  * package: add "browserify" as a dev dependency
-  * Readme: add Web Inspector Colors section
-  * node: reset terminal color for the debug content
-  * node: map "%o" to `util.inspect()`
-  * browser: map "%j" to `JSON.stringify()`
-  * debug: add custom "formatters"
-  * debug: use "ms" module for humanizing the diff
-  * Readme: add "bash" syntax highlighting
-  * browser: add Firebug color support
-  * browser: add colors for WebKit browsers
-  * node: apply log to `console`
-  * rewrite: abstract common logic for Node & browsers
-  * add .jshintrc file
-
-0.8.1 / 2014-04-14
-==================
-
-  * package: re-add the "component" section
-
-0.8.0 / 2014-03-30
-==================
-
-  * add `enable()` method for nodejs. Closes #27
-  * change from stderr to stdout
-  * remove unnecessary index.js file
-
-0.7.4 / 2013-11-13
-==================
-
-  * remove "browserify" key from package.json (fixes something in browserify)
-
-0.7.3 / 2013-10-30
-==================
-
-  * fix: catch localStorage security error when cookies are blocked (Chrome)
-  * add debug(err) support. Closes #46
-  * add .browser prop to package.json. Closes #42
-
-0.7.2 / 2013-02-06
-==================
-
-  * fix package.json
-  * fix: Mobile Safari (private mode) is broken with debug
-  * fix: Use unicode to send escape character to shell instead of octal to work with strict mode javascript
-
-0.7.1 / 2013-02-05
-==================
-
-  * add repository URL to package.json
-  * add DEBUG_COLORED to force colored output
-  * add browserify support
-  * fix component. Closes #24
-
-0.7.0 / 2012-05-04
-==================
-
-  * Added .component to package.json
-  * Added debug.component.js build
-
-0.6.0 / 2012-03-16
-==================
-
-  * Added support for "-" prefix in DEBUG [Vinay Pulim]
-  * Added `.enabled` flag to the node version [TooTallNate]
-
-0.5.0 / 2012-02-02
-==================
-
-  * Added: humanize diffs. Closes #8
-  * Added `debug.disable()` to the CS variant
-  * Removed padding. Closes #10
-  * Fixed: persist client-side variant again. Closes #9
-
-0.4.0 / 2012-02-01
-==================
-
-  * Added browser variant support for older browsers [TooTallNate]
-  * Added `debug.enable('project:*')` to browser variant [TooTallNate]
-  * Added padding to diff (moved it to the right)
-
-0.3.0 / 2012-01-26
-==================
-
-  * Added millisecond diff when isatty, otherwise UTC string
-
-0.2.0 / 2012-01-22
-==================
-
-  * Added wildcard support
-
-0.1.0 / 2011-12-02
-==================
-
-  * Added: remove colors unless stderr isatty [TooTallNate]
-
-0.0.1 / 2010-01-03
-==================
-
-  * Initial release
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v1.1.2](https://github.com/ljharb/function-bind/compare/v1.1.1...v1.1.2) - 2023-10-12
+
+### Merged
+
+- Point to the correct file [`#16`](https://github.com/ljharb/function-bind/pull/16)
+
+### Commits
+
+- [Tests] migrate tests to Github Actions [`4f8b57c`](https://github.com/ljharb/function-bind/commit/4f8b57c02f2011fe9ae353d5e74e8745f0988af8)
+- [Tests] remove `jscs` [`90eb2ed`](https://github.com/ljharb/function-bind/commit/90eb2edbeefd5b76cd6c3a482ea3454db169b31f)
+- [meta] update `.gitignore` [`53fcdc3`](https://github.com/ljharb/function-bind/commit/53fcdc371cd66634d6e9b71c836a50f437e89fed)
+- [Tests] up to `node` `v11.10`, `v10.15`, `v9.11`, `v8.15`, `v6.16`, `v4.9`; use `nvm install-latest-npm`; run audit script in tests [`1fe8f6e`](https://github.com/ljharb/function-bind/commit/1fe8f6e9aed0dfa8d8b3cdbd00c7f5ea0cd2b36e)
+- [meta] add `auto-changelog` [`1921fcb`](https://github.com/ljharb/function-bind/commit/1921fcb5b416b63ffc4acad051b6aad5722f777d)
+- [Robustness] remove runtime dependency on all builtins except `.apply` [`f743e61`](https://github.com/ljharb/function-bind/commit/f743e61aa6bb2360358c04d4884c9db853d118b7)
+- Docs: enable badges; update wording [`503cb12`](https://github.com/ljharb/function-bind/commit/503cb12d998b5f91822776c73332c7adcd6355dd)
+- [readme] update badges [`290c5db`](https://github.com/ljharb/function-bind/commit/290c5dbbbda7264efaeb886552a374b869a4bb48)
+- [Tests] switch to nyc for coverage [`ea360ba`](https://github.com/ljharb/function-bind/commit/ea360ba907fc2601ed18d01a3827fa2d3533cdf8)
+- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `tape` [`cae5e9e`](https://github.com/ljharb/function-bind/commit/cae5e9e07a5578dc6df26c03ee22851ce05b943c)
+- [meta] add `funding` field; create FUNDING.yml [`c9f4274`](https://github.com/ljharb/function-bind/commit/c9f4274aa80ea3aae9657a3938fdba41a3b04ca6)
+- [Tests] fix eslint errors from #15 [`f69aaa2`](https://github.com/ljharb/function-bind/commit/f69aaa2beb2fdab4415bfb885760a699d0b9c964)
+- [actions] fix permissions [`99a0cd9`](https://github.com/ljharb/function-bind/commit/99a0cd9f3b5bac223a0d572f081834cd73314be7)
+- [meta] use `npmignore` to autogenerate an npmignore file [`f03b524`](https://github.com/ljharb/function-bind/commit/f03b524ca91f75a109a5d062f029122c86ecd1ae)
+- [Dev Deps] update `@ljharb/eslint‑config`, `eslint`, `tape` [`7af9300`](https://github.com/ljharb/function-bind/commit/7af930023ae2ce7645489532821e4fbbcd7a2280)
+- [Dev Deps] update `eslint`, `@ljharb/eslint-config`, `covert`, `tape` [`64a9127`](https://github.com/ljharb/function-bind/commit/64a9127ab0bd331b93d6572eaf6e9971967fc08c)
+- [Tests] use `aud` instead of `npm audit` [`e75069c`](https://github.com/ljharb/function-bind/commit/e75069c50010a8fcce2a9ce2324934c35fdb4386)
+- [Dev Deps] update `@ljharb/eslint-config`, `aud`, `tape` [`d03555c`](https://github.com/ljharb/function-bind/commit/d03555ca59dea3b71ce710045e4303b9e2619e28)
+- [meta] add `safe-publish-latest` [`9c8f809`](https://github.com/ljharb/function-bind/commit/9c8f8092aed027d7e80c94f517aa892385b64f09)
+- [Dev Deps] update `@ljharb/eslint-config`, `tape` [`baf6893`](https://github.com/ljharb/function-bind/commit/baf6893e27f5b59abe88bc1995e6f6ed1e527397)
+- [meta] create SECURITY.md [`4db1779`](https://github.com/ljharb/function-bind/commit/4db17799f1f28ae294cb95e0081ca2b591c3911b)
+- [Tests] add `npm run audit` [`c8b38ec`](https://github.com/ljharb/function-bind/commit/c8b38ec40ed3f85dabdee40ed4148f1748375bc2)
+- Revert "Point to the correct file" [`05cdf0f`](https://github.com/ljharb/function-bind/commit/05cdf0fa205c6a3c5ba40bbedd1dfa9874f915c9)
+
+## [v1.1.1](https://github.com/ljharb/function-bind/compare/v1.1.0...v1.1.1) - 2017-08-28
+
+### Commits
+
+- [Tests] up to `node` `v8`; newer npm breaks on older node; fix scripts [`817f7d2`](https://github.com/ljharb/function-bind/commit/817f7d28470fdbff8ef608d4d565dd4d1430bc5e)
+- [Dev Deps] update `eslint`, `jscs`, `tape`, `@ljharb/eslint-config` [`854288b`](https://github.com/ljharb/function-bind/commit/854288b1b6f5c555f89aceb9eff1152510262084)
+- [Dev Deps] update `tape`, `jscs`, `eslint`, `@ljharb/eslint-config` [`83e639f`](https://github.com/ljharb/function-bind/commit/83e639ff74e6cd6921285bccec22c1bcf72311bd)
+- Only apps should have lockfiles [`5ed97f5`](https://github.com/ljharb/function-bind/commit/5ed97f51235c17774e0832e122abda0f3229c908)
+- Use a SPDX-compliant “license” field. [`5feefea`](https://github.com/ljharb/function-bind/commit/5feefea0dc0193993e83e5df01ded424403a5381)
+
+## [v1.1.0](https://github.com/ljharb/function-bind/compare/v1.0.2...v1.1.0) - 2016-02-14
+
+### Commits
+
+- Update `eslint`, `tape`; use my personal shared `eslint` config [`9c9062a`](https://github.com/ljharb/function-bind/commit/9c9062abbe9dd70b59ea2c3a3c3a81f29b457097)
+- Add `npm run eslint` [`dd96c56`](https://github.com/ljharb/function-bind/commit/dd96c56720034a3c1ffee10b8a59a6f7c53e24ad)
+- [New] return the native `bind` when available. [`82186e0`](https://github.com/ljharb/function-bind/commit/82186e03d73e580f95ff167e03f3582bed90ed72)
+- [Dev Deps] update `tape`, `jscs`, `eslint`, `@ljharb/eslint-config` [`a3dd767`](https://github.com/ljharb/function-bind/commit/a3dd76720c795cb7f4586b0544efabf8aa107b8b)
+- Update `eslint` [`3dae2f7`](https://github.com/ljharb/function-bind/commit/3dae2f7423de30a2d20313ddb1edc19660142fe9)
+- Update `tape`, `covert`, `jscs` [`a181eee`](https://github.com/ljharb/function-bind/commit/a181eee0cfa24eb229c6e843a971f36e060a2f6a)
+- [Tests] up to `node` `v5.6`, `v4.3` [`964929a`](https://github.com/ljharb/function-bind/commit/964929a6a4ddb36fb128de2bcc20af5e4f22e1ed)
+- Test up to `io.js` `v2.1` [`2be7310`](https://github.com/ljharb/function-bind/commit/2be7310f2f74886a7124ca925be411117d41d5ea)
+- Update `tape`, `jscs`, `eslint`, `@ljharb/eslint-config` [`45f3d68`](https://github.com/ljharb/function-bind/commit/45f3d6865c6ca93726abcef54febe009087af101)
+- [Dev Deps] update `tape`, `jscs` [`6e1340d`](https://github.com/ljharb/function-bind/commit/6e1340d94642deaecad3e717825db641af4f8b1f)
+- [Tests] up to `io.js` `v3.3`, `node` `v4.1` [`d9bad2b`](https://github.com/ljharb/function-bind/commit/d9bad2b778b1b3a6dd2876087b88b3acf319f8cc)
+- Update `eslint` [`935590c`](https://github.com/ljharb/function-bind/commit/935590caa024ab356102e4858e8fc315b2ccc446)
+- [Dev Deps] update `jscs`, `eslint`, `@ljharb/eslint-config` [`8c9a1ef`](https://github.com/ljharb/function-bind/commit/8c9a1efd848e5167887aa8501857a0940a480c57)
+- Test on `io.js` `v2.2` [`9a3a38c`](https://github.com/ljharb/function-bind/commit/9a3a38c92013aed6e108666e7bd40969b84ac86e)
+- Run `travis-ci` tests on `iojs` and `node` v0.12; speed up builds; allow 0.8 failures. [`69afc26`](https://github.com/ljharb/function-bind/commit/69afc2617405b147dd2a8d8ae73ca9e9283f18b4)
+- [Dev Deps] Update `tape`, `eslint` [`36c1be0`](https://github.com/ljharb/function-bind/commit/36c1be0ab12b45fe5df6b0fdb01a5d5137fd0115)
+- Update `tape`, `jscs` [`98d8303`](https://github.com/ljharb/function-bind/commit/98d8303cd5ca1c6b8f985469f86b0d44d7d45f6e)
+- Update `jscs` [`9633a4e`](https://github.com/ljharb/function-bind/commit/9633a4e9fbf82051c240855166e468ba8ba0846f)
+- Update `tape`, `jscs` [`c80ef0f`](https://github.com/ljharb/function-bind/commit/c80ef0f46efc9791e76fa50de4414092ac147831)
+- Test up to `io.js` `v3.0` [`7e2c853`](https://github.com/ljharb/function-bind/commit/7e2c8537d52ab9cf5a655755561d8917684c0df4)
+- Test on `io.js` `v2.4` [`5a199a2`](https://github.com/ljharb/function-bind/commit/5a199a27ba46795ba5eaf0845d07d4b8232895c9)
+- Test on `io.js` `v2.3` [`a511b88`](https://github.com/ljharb/function-bind/commit/a511b8896de0bddf3b56862daa416c701f4d0453)
+- Fixing a typo from 822b4e1938db02dc9584aa434fd3a45cb20caf43 [`732d6b6`](https://github.com/ljharb/function-bind/commit/732d6b63a9b33b45230e630dbcac7a10855d3266)
+- Update `jscs` [`da52a48`](https://github.com/ljharb/function-bind/commit/da52a4886c06d6490f46ae30b15e4163ba08905d)
+- Lock covert to v1.0.0. [`d6150fd`](https://github.com/ljharb/function-bind/commit/d6150fda1e6f486718ebdeff823333d9e48e7430)
+
+## [v1.0.2](https://github.com/ljharb/function-bind/compare/v1.0.1...v1.0.2) - 2014-10-04
+
+## [v1.0.1](https://github.com/ljharb/function-bind/compare/v1.0.0...v1.0.1) - 2014-10-03
+
+### Merged
+
+- make CI build faster [`#3`](https://github.com/ljharb/function-bind/pull/3)
+
+### Commits
+
+- Using my standard jscs.json [`d8ee94c`](https://github.com/ljharb/function-bind/commit/d8ee94c993eff0a84cf5744fe6a29627f5cffa1a)
+- Adding `npm run lint` [`7571ab7`](https://github.com/ljharb/function-bind/commit/7571ab7dfdbd99b25a1dbb2d232622bd6f4f9c10)
+- Using consistent indentation [`e91a1b1`](https://github.com/ljharb/function-bind/commit/e91a1b13a61e99ec1e530e299b55508f74218a95)
+- Updating jscs [`7e17892`](https://github.com/ljharb/function-bind/commit/7e1789284bc629bc9c1547a61c9b227bbd8c7a65)
+- Using consistent quotes [`c50b57f`](https://github.com/ljharb/function-bind/commit/c50b57fcd1c5ec38320979c837006069ebe02b77)
+- Adding keywords [`cb94631`](https://github.com/ljharb/function-bind/commit/cb946314eed35f21186a25fb42fc118772f9ee00)
+- Directly export a function expression instead of using a declaration, and relying on hoisting. [`5a33c5f`](https://github.com/ljharb/function-bind/commit/5a33c5f45642de180e0d207110bf7d1843ceb87c)
+- Naming npm URL and badge in README; use SVG [`2aef8fc`](https://github.com/ljharb/function-bind/commit/2aef8fcb79d54e63a58ae557c4e60949e05d5e16)
+- Naming deps URLs in README [`04228d7`](https://github.com/ljharb/function-bind/commit/04228d766670ee45ca24e98345c1f6a7621065b5)
+- Naming travis-ci URLs in README; using SVG [`62c810c`](https://github.com/ljharb/function-bind/commit/62c810c2f54ced956cd4d4ab7b793055addfe36e)
+- Make sure functions are invoked correctly (also passing coverage tests) [`2b289b4`](https://github.com/ljharb/function-bind/commit/2b289b4dfbf037ffcfa4dc95eb540f6165e9e43a)
+- Removing the strict mode pragmas; they make tests fail. [`1aa701d`](https://github.com/ljharb/function-bind/commit/1aa701d199ddc3782476e8f7eef82679be97b845)
+- Adding myself as a contributor [`85fd57b`](https://github.com/ljharb/function-bind/commit/85fd57b0860e5a7af42de9a287f3f265fc6d72fc)
+- Adding strict mode pragmas [`915b08e`](https://github.com/ljharb/function-bind/commit/915b08e084c86a722eafe7245e21db74aa21ca4c)
+- Adding devDeps URLs to README [`4ccc731`](https://github.com/ljharb/function-bind/commit/4ccc73112c1769859e4ca3076caf4086b3cba2cd)
+- Fixing the description. [`a7a472c`](https://github.com/ljharb/function-bind/commit/a7a472cf649af515c635cf560fc478fbe48999c8)
+- Using a function expression instead of a function declaration. [`b5d3e4e`](https://github.com/ljharb/function-bind/commit/b5d3e4ea6aaffc63888953eeb1fbc7ff45f1fa14)
+- Updating tape [`f086be6`](https://github.com/ljharb/function-bind/commit/f086be6029fb56dde61a258c1340600fa174d1e0)
+- Updating jscs [`5f9bdb3`](https://github.com/ljharb/function-bind/commit/5f9bdb375ab13ba48f30852aab94029520c54d71)
+- Updating jscs [`9b409ba`](https://github.com/ljharb/function-bind/commit/9b409ba6118e23395a4e5d83ef39152aab9d3bfc)
+- Run coverage as part of tests. [`8e1b6d4`](https://github.com/ljharb/function-bind/commit/8e1b6d459f047d1bd4fee814e01247c984c80bd0)
+- Run linter as part of tests [`c1ca83f`](https://github.com/ljharb/function-bind/commit/c1ca83f832df94587d09e621beba682fabfaa987)
+- Updating covert [`701e837`](https://github.com/ljharb/function-bind/commit/701e83774b57b4d3ef631e1948143f43a72f4bb9)
+
+## [v1.0.0](https://github.com/ljharb/function-bind/compare/v0.2.0...v1.0.0) - 2014-08-09
+
+### Commits
+
+- Make sure old and unstable nodes don't fail Travis [`27adca3`](https://github.com/ljharb/function-bind/commit/27adca34a4ab6ad67b6dfde43942a1b103ce4d75)
+- Fixing an issue when the bound function is called as a constructor in ES3. [`e20122d`](https://github.com/ljharb/function-bind/commit/e20122d267d92ce553859b280cbbea5d27c07731)
+- Adding `npm run coverage` [`a2e29c4`](https://github.com/ljharb/function-bind/commit/a2e29c4ecaef9e2f6cd1603e868c139073375502)
+- Updating tape [`b741168`](https://github.com/ljharb/function-bind/commit/b741168b12b235b1717ff696087645526b69213c)
+- Upgrading tape [`63631a0`](https://github.com/ljharb/function-bind/commit/63631a04c7fbe97cc2fa61829cc27246d6986f74)
+- Updating tape [`363cb46`](https://github.com/ljharb/function-bind/commit/363cb46dafb23cb3e347729a22f9448051d78464)
+
+## v0.2.0 - 2014-03-23
+
+### Commits
+
+- Updating test coverage to match es5-shim. [`aa94d44`](https://github.com/ljharb/function-bind/commit/aa94d44b8f9d7f69f10e060db7709aa7a694e5d4)
+- initial [`942ee07`](https://github.com/ljharb/function-bind/commit/942ee07e94e542d91798137bc4b80b926137e066)
+- Setting the bound function's length properly. [`079f46a`](https://github.com/ljharb/function-bind/commit/079f46a2d3515b7c0b308c2c13fceb641f97ca25)
+- Ensuring that some older browsers will throw when given a regex. [`36ac55b`](https://github.com/ljharb/function-bind/commit/36ac55b87f460d4330253c92870aa26fbfe8227f)
+- Removing npm scripts that don't have dependencies [`9d2be60`](https://github.com/ljharb/function-bind/commit/9d2be600002cb8bc8606f8f3585ad3e05868c750)
+- Updating tape [`297a4ac`](https://github.com/ljharb/function-bind/commit/297a4acc5464db381940aafb194d1c88f4e678f3)
+- Skipping length tests for now. [`d9891ea`](https://github.com/ljharb/function-bind/commit/d9891ea4d2aaffa69f408339cdd61ff740f70565)
+- don't take my tea [`dccd930`](https://github.com/ljharb/function-bind/commit/dccd930bfd60ea10cb178d28c97550c3bc8c1e07)
