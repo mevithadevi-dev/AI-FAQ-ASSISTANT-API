@@ -10,79 +10,171 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GoogleAuth = exports.auth = exports.GDCH_SERVICE_ACCOUNT_TYPE = exports.GdchClient = exports.PassThroughClient = exports.ExternalAccountAuthorizedUserClient = exports.EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE = exports.ExecutableError = exports.PluggableAuthClient = exports.DownscopedClient = exports.BaseExternalAccountClient = exports.ExternalAccountClient = exports.IdentityPoolClient = exports.AwsRequestSigner = exports.AwsClient = exports.UserRefreshClient = exports.LoginTicket = exports.ClientAuthentication = exports.OAuth2Client = exports.CodeChallengeMethod = exports.Impersonated = exports.JWT = exports.JWTAccess = exports.IdTokenClient = exports.IAMAuth = exports.GCPEnv = exports.Compute = exports.DEFAULT_UNIVERSE = exports.AuthClient = exports.gaxios = exports.gcpMetadata = void 0;
-// Copyright 2017 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-const googleauth_1 = require("./auth/googleauth");
-Object.defineProperty(exports, "GoogleAuth", { enumerable: true, get: function () { return googleauth_1.GoogleAuth; } });
-// Export common deps to ensure types/instances are the exact match. Useful
-// for consistently configuring the library across versions.
-exports.gcpMetadata = require("gcp-metadata");
-exports.gaxios = require("gaxios");
-var authclient_1 = require("./auth/authclient");
-Object.defineProperty(exports, "AuthClient", { enumerable: true, get: function () { return authclient_1.AuthClient; } });
-Object.defineProperty(exports, "DEFAULT_UNIVERSE", { enumerable: true, get: function () { return authclient_1.DEFAULT_UNIVERSE; } });
-var computeclient_1 = require("./auth/computeclient");
-Object.defineProperty(exports, "Compute", { enumerable: true, get: function () { return computeclient_1.Compute; } });
-var envDetect_1 = require("./auth/envDetect");
-Object.defineProperty(exports, "GCPEnv", { enumerable: true, get: function () { return envDetect_1.GCPEnv; } });
-var iam_1 = require("./auth/iam");
-Object.defineProperty(exports, "IAMAuth", { enumerable: true, get: function () { return iam_1.IAMAuth; } });
-var idtokenclient_1 = require("./auth/idtokenclient");
-Object.defineProperty(exports, "IdTokenClient", { enumerable: true, get: function () { return idtokenclient_1.IdTokenClient; } });
-var jwtaccess_1 = require("./auth/jwtaccess");
-Object.defineProperty(exports, "JWTAccess", { enumerable: true, get: function () { return jwtaccess_1.JWTAccess; } });
-var jwtclient_1 = require("./auth/jwtclient");
-Object.defineProperty(exports, "JWT", { enumerable: true, get: function () { return jwtclient_1.JWT; } });
-var impersonated_1 = require("./auth/impersonated");
-Object.defineProperty(exports, "Impersonated", { enumerable: true, get: function () { return impersonated_1.Impersonated; } });
-var oauth2client_1 = require("./auth/oauth2client");
-Object.defineProperty(exports, "CodeChallengeMethod", { enumerable: true, get: function () { return oauth2client_1.CodeChallengeMethod; } });
-Object.defineProperty(exports, "OAuth2Client", { enumerable: true, get: function () { return oauth2client_1.OAuth2Client; } });
-Object.defineProperty(exports, "ClientAuthentication", { enumerable: true, get: function () { return oauth2client_1.ClientAuthentication; } });
-var loginticket_1 = require("./auth/loginticket");
-Object.defineProperty(exports, "LoginTicket", { enumerable: true, get: function () { return loginticket_1.LoginTicket; } });
-var refreshclient_1 = require("./auth/refreshclient");
-Object.defineProperty(exports, "UserRefreshClient", { enumerable: true, get: function () { return refreshclient_1.UserRefreshClient; } });
-var awsclient_1 = require("./auth/awsclient");
-Object.defineProperty(exports, "AwsClient", { enumerable: true, get: function () { return awsclient_1.AwsClient; } });
-var awsrequestsigner_1 = require("./auth/awsrequestsigner");
-Object.defineProperty(exports, "AwsRequestSigner", { enumerable: true, get: function () { return awsrequestsigner_1.AwsRequestSigner; } });
-var identitypoolclient_1 = require("./auth/identitypoolclient");
-Object.defineProperty(exports, "IdentityPoolClient", { enumerable: true, get: function () { return identitypoolclient_1.IdentityPoolClient; } });
-var externalclient_1 = require("./auth/externalclient");
-Object.defineProperty(exports, "ExternalAccountClient", { enumerable: true, get: function () { return externalclient_1.ExternalAccountClient; } });
-var baseexternalclient_1 = require("./auth/baseexternalclient");
-Object.defineProperty(exports, "BaseExternalAccountClient", { enumerable: true, get: function () { return baseexternalclient_1.BaseExternalAccountClient; } });
-var downscopedclient_1 = require("./auth/downscopedclient");
-Object.defineProperty(exports, "DownscopedClient", { enumerable: true, get: function () { return downscopedclient_1.DownscopedClient; } });
-var pluggable_auth_client_1 = require("./auth/pluggable-auth-client");
-Object.defineProperty(exports, "PluggableAuthClient", { enumerable: true, get: function () { return pluggable_auth_client_1.PluggableAuthClient; } });
-Object.defineProperty(exports, "ExecutableError", { enumerable: true, get: function () { return pluggable_auth_client_1.ExecutableError; } });
-var externalAccountAuthorizedUserClient_1 = require("./auth/externalAccountAuthorizedUserClient");
-Object.defineProperty(exports, "EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE", { enumerable: true, get: function () { return externalAccountAuthorizedUserClient_1.EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE; } });
-Object.defineProperty(exports, "ExternalAccountAuthorizedUserClient", { enumerable: true, get: function () { return externalAccountAuthorizedUserClient_1.ExternalAccountAuthorizedUserClient; } });
-var passthrough_1 = require("./auth/passthrough");
-Object.defineProperty(exports, "PassThroughClient", { enumerable: true, get: function () { return passthrough_1.PassThroughClient; } });
-var gdchclient_1 = require("./auth/gdchclient");
-Object.defineProperty(exports, "GdchClient", { enumerable: true, get: function () { return gdchclient_1.GdchClient; } });
-Object.defineProperty(exports, "GDCH_SERVICE_ACCOUNT_TYPE", { enumerable: true, get: function () { return gdchclient_1.GDCH_SERVICE_ACCOUNT_TYPE; } });
-__exportStar(require("./gtoken/googleToken"), exports);
-const auth = new googleauth_1.GoogleAuth();
-exports.auth = auth;
+exports.HttpsProxyAgent = void 0;
+const net = __importStar(require("net"));
+const tls = __importStar(require("tls"));
+const assert_1 = __importDefault(require("assert"));
+const debug_1 = __importDefault(require("debug"));
+const agent_base_1 = require("agent-base");
+const url_1 = require("url");
+const parse_proxy_response_1 = require("./parse-proxy-response");
+const debug = (0, debug_1.default)('https-proxy-agent');
+const setServernameFromNonIpHost = (options) => {
+    if (options.servername === undefined &&
+        options.host &&
+        !net.isIP(options.host)) {
+        return {
+            ...options,
+            servername: options.host,
+        };
+    }
+    return options;
+};
+/**
+ * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to
+ * the specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
+ *
+ * Outgoing HTTP requests are first tunneled through the proxy server using the
+ * `CONNECT` HTTP request method to establish a connection to the proxy server,
+ * and then the proxy server connects to the destination target and issues the
+ * HTTP request from the proxy server.
+ *
+ * `https:` requests have their socket connection upgraded to TLS once
+ * the connection to the proxy server has been established.
+ */
+class HttpsProxyAgent extends agent_base_1.Agent {
+    constructor(proxy, opts) {
+        super(opts);
+        this.options = { path: undefined };
+        this.proxy = typeof proxy === 'string' ? new url_1.URL(proxy) : proxy;
+        this.proxyHeaders = opts?.headers ?? {};
+        debug('Creating new HttpsProxyAgent instance: %o', this.proxy.href);
+        // Trim off the brackets from IPv6 addresses
+        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
+        const port = this.proxy.port
+            ? parseInt(this.proxy.port, 10)
+            : this.proxy.protocol === 'https:'
+                ? 443
+                : 80;
+        this.connectOpts = {
+            // Attempt to negotiate http/1.1 for proxy servers that support http/2
+            ALPNProtocols: ['http/1.1'],
+            ...(opts ? omit(opts, 'headers') : null),
+            host,
+            port,
+        };
+    }
+    /**
+     * Called when the node-core HTTP client library is creating a
+     * new HTTP request.
+     */
+    async connect(req, opts) {
+        const { proxy } = this;
+        if (!opts.host) {
+            throw new TypeError('No "host" provided');
+        }
+        // Create a socket connection to the proxy server.
+        let socket;
+        if (proxy.protocol === 'https:') {
+            debug('Creating `tls.Socket`: %o', this.connectOpts);
+            socket = tls.connect(setServernameFromNonIpHost(this.connectOpts));
+        }
+        else {
+            debug('Creating `net.Socket`: %o', this.connectOpts);
+            socket = net.connect(this.connectOpts);
+        }
+        const headers = typeof this.proxyHeaders === 'function'
+            ? this.proxyHeaders()
+            : { ...this.proxyHeaders };
+        const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
+        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
+        // Inject the `Proxy-Authorization` header if necessary.
+        if (proxy.username || proxy.password) {
+            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
+            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
+        }
+        headers.Host = `${host}:${opts.port}`;
+        if (!headers['Proxy-Connection']) {
+            headers['Proxy-Connection'] = this.keepAlive
+                ? 'Keep-Alive'
+                : 'close';
+        }
+        for (const name of Object.keys(headers)) {
+            payload += `${name}: ${headers[name]}\r\n`;
+        }
+        const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
+        socket.write(`${payload}\r\n`);
+        const { connect, buffered } = await proxyResponsePromise;
+        req.emit('proxyConnect', connect);
+        this.emit('proxyConnect', connect, req);
+        if (connect.statusCode === 200) {
+            req.once('socket', resume);
+            if (opts.secureEndpoint) {
+                // The proxy is connecting to a TLS server, so upgrade
+                // this socket connection to a TLS connection.
+                debug('Upgrading socket connection to TLS');
+                return tls.connect({
+                    ...omit(setServernameFromNonIpHost(opts), 'host', 'path', 'port'),
+                    socket,
+                });
+            }
+            return socket;
+        }
+        // Some other status code that's not 200... need to re-play the HTTP
+        // header "data" events onto the socket once the HTTP machinery is
+        // attached so that the node core `http` can parse and handle the
+        // error status code.
+        // Close the original socket, and a new "fake" socket is returned
+        // instead, so that the proxy doesn't get the HTTP request
+        // written to it (which may contain `Authorization` headers or other
+        // sensitive data).
+        //
+        // See: https://hackerone.com/reports/541502
+        socket.destroy();
+        const fakeSocket = new net.Socket({ writable: false });
+        fakeSocket.readable = true;
+        // Need to wait for the "socket" event to re-play the "data" events.
+        req.once('socket', (s) => {
+            debug('Replaying proxy buffer for failed request');
+            (0, assert_1.default)(s.listenerCount('data') > 0);
+            // Replay the "buffered" Buffer onto the fake `socket`, since at
+            // this point the HTTP module machinery has been hooked up for
+            // the user.
+            s.push(buffered);
+            s.push(null);
+        });
+        return fakeSocket;
+    }
+}
+HttpsProxyAgent.protocols = ['http', 'https'];
+exports.HttpsProxyAgent = HttpsProxyAgent;
+function resume(socket) {
+    socket.resume();
+}
+function omit(obj, ...keys) {
+    const ret = {};
+    let key;
+    for (key in obj) {
+        if (!keys.includes(key)) {
+            ret[key] = obj[key];
+        }
+    }
+    return ret;
+}
 //# sourceMappingURL=index.js.map
