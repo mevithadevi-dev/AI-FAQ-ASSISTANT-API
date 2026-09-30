@@ -1,54 +1,42 @@
-/*eslint-disable no-console*/
-"use strict";
-var protobuf   = require("../../"),
-    descriptor = require(".");
+/*jshint node:true */
+'use strict';
 
-/* var proto = {
-    nested: {
-        Message: {
-            fields: {
-                foo: {
-                    type: "string",
-                    id: 1
-                }
-            },
-            nested: {
-                SubMessage: {
-                    fields: {}
-                }
-            }
-        },
-        Enum: {
-            values: {
-                ONE: 1,
-                TWO: 2
-            }
-        }
-    }
-}; */
+var bufferEq = require('./index');
+var assert = require('assert');
 
-// var root = protobuf.Root.fromJSON(proto).resolveAll();
-var root = protobuf.loadSync("tests/data/google/protobuf/descriptor.proto").resolveAll();
+describe('buffer-equal-constant-time', function() {
+  var a = new Buffer('asdfasdf123456');
+  var b = new Buffer('asdfasdf123456');
+  var c = new Buffer('asdfasdf');
 
-// console.log("Original proto", JSON.stringify(root, null, 2));
-
-var msg  = root.toDescriptor();
-
-// console.log("\nDescriptor", JSON.stringify(msg.toObject(), null, 2));
-
-var buf  = descriptor.FileDescriptorSet.encode(msg).finish();
-var root2 = protobuf.Root.fromDescriptor(buf, "proto2").resolveAll();
-
-// console.log("\nDecoded proto", JSON.stringify(root2, null, 2));
-
-var diff = require("deep-diff").diff(root.toJSON(), root2.toJSON());
-if (diff) {
-    diff.forEach(function(diff) {
-        console.log(diff.kind + " @ " + diff.path.join("."));
-        console.log("lhs:", typeof diff.lhs, diff.lhs);
-        console.log("rhs:", typeof diff.rhs, diff.rhs);
-        console.log();
+  describe('bufferEq', function() {
+    it('says a == b', function() {
+      assert.strictEqual(bufferEq(a, b), true);
     });
-    process.exitCode = 1;
-} else
-    console.log("no differences");
+
+    it('says a != c', function() {
+      assert.strictEqual(bufferEq(a, c), false);
+    });
+  });
+
+  describe('install/restore', function() {
+    before(function() {
+      bufferEq.install();
+    });
+    after(function() {
+      bufferEq.restore();
+    });
+
+    it('installed an .equal method', function() {
+      var SlowBuffer = require('buffer').SlowBuffer;
+      assert.ok(Buffer.prototype.equal);
+      assert.ok(SlowBuffer.prototype.equal);
+    });
+
+    it('infected existing Buffers', function() {
+      assert.strictEqual(a.equal(b), true);
+      assert.strictEqual(a.equal(c), false);
+    });
+  });
+
+});
